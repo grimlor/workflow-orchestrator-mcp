@@ -15,15 +15,15 @@ The key difference is the **feedback loop**. Where demo-assistant delivers promp
 - **Variable flow** — LLM extracts output values that feed into subsequent steps
 
 ```
-┌───────────────────┐     enriched prompt      ┌─────────────────┐
-│                  │  ──────────────────────► │                 │
-│   Orchestrator   │                          │  Copilot / LLM  │
-│   (MCP Server)   │  ◄──────────────────────  │                 │
-│                  │    report_step_result     │  (executes tools │
-│  - parse workflow│                          │   evaluates      │
+┌───────────────────┐     enriched prompt      ┌──────────────────┐
+│                   │  ──────────────────────► │                  │
+│   Orchestrator    │                          │  Copilot / LLM   │
+│   (MCP Server)    │  ◄────────────────────── │                  │
+│                   │    report_step_result    │  (executes tools │
+│  - parse workflow │                          │   evaluates      │
 │  - track state    │                          │   assertions)    │
-│  - manage vars    │                          │                 │
-└───────────────────┘                          └─────────────────┘
+│  - manage vars    │                          │                  │
+└───────────────────┘                          └──────────────────┘
 ```
 
 ## Components
