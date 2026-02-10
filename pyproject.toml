@@ -1,0 +1,61 @@
+[project]
+name = "workflow-orchestrator-mcp"
+version = "0.1.0"
+description = "MCP server for orchestrating AI workflows defined in markdown with natural language"
+authors = [
+    { name = "Jack Pines", email = "github@jackpines.info" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=0.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.11.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+]
+
+[project.scripts]
+workflow-orchestrator-mcp = "workflow_orchestrator_mcp.server:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/workflow_orchestrator_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["*_test.py", "test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+packages = ["workflow_orchestrator_mcp"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = "mcp.*"
+ignore_missing_imports = true
