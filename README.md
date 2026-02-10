@@ -2,6 +2,12 @@
 
 An MCP server for orchestrating AI workflows defined in markdown with natural language. Evolution from [demo-assistant-mcp](https://github.com/grimlor/demo-assistant-mcp) — adds tool specifications, assertion-based validation, variable flow between steps, and an LLM feedback loop.
 
+## Quick Install
+
+[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://vscode.dev/redirect?url=vscode%3Amcp/install%3F%257B%2522name%2522%253A%2520%2522workflow-orchestrator-mcp%2522%252C%2520%2522command%2522%253A%2520%2522uvx%2522%252C%2520%2522args%2522%253A%2520%255B%2522--from%2522%252C%2520%2522git%252Bhttps%253A%252F%252Fgithub.com%252Fgrimlor%252Fworkflow-orchestrator-mcp%2522%252C%2520%2522workflow-orchestrator-mcp%2522%255D%252C%2520%2522type%2522%253A%2520%2522stdio%2522%257D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp/install%3F%257B%2522name%2522%253A%2520%2522workflow-orchestrator-mcp%2522%252C%2520%2522command%2522%253A%2520%2522uvx%2522%252C%2520%2522args%2522%253A%2520%255B%2522--from%2522%252C%2520%2522git%252Bhttps%253A%252F%252Fgithub.com%252Fgrimlor%252Fworkflow-orchestrator-mcp%2522%252C%2520%2522workflow-orchestrator-mcp%2522%255D%252C%2520%2522type%2522%253A%2520%2522stdio%2522%257D)
+
+*Click a badge above to install with one click, or follow manual installation below.*
+
 ## How It Works
 
 Define workflows in readable markdown. The orchestrator parses them into steps and feeds enriched prompts to Copilot, which executes the specified tools. After each step, the LLM reports results back, and the orchestrator tracks outcomes and flows data to the next step.
@@ -53,6 +59,12 @@ See [Workflow Format](docs/WORKFLOW_FORMAT.md) for the full specification and [E
 | `reset_workflow` | Reset to the beginning (workflow stays loaded) |
 
 ## Installation
+
+### Quick Install (Recommended)
+
+Click one of the badges at the top to automatically install in VS Code!
+
+### Manual Installation
 
 ```bash
 cd workflow-orchestrator-mcp
