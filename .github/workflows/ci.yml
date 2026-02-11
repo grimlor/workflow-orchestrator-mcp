@@ -35,11 +35,23 @@ jobs:
         run: uv run mypy src/
 
       - name: Run tests with coverage
-        run: uv run pytest --cov=workflow_orchestrator_mcp --cov-report=term-missing --cov-report=xml
+        run: uv run pytest --cov=workflow_orchestrator_mcp --cov-report=term-missing --cov-report=json
 
-      - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.12'
-        uses: codecov/codecov-action@v5
+      - name: Extract coverage percentage
+        if: matrix.python-version == '3.12' && github.ref == 'refs/heads/master'
+        run: |
+          COVERAGE=$(python -c "import json; print(int(json.load(open('coverage.json'))['totals']['percent_covered']))")
+          echo "COVERAGE_PCT=$COVERAGE" >> $GITHUB_ENV
+
+      - name: Update coverage badge
+        if: matrix.python-version == '3.12' && github.ref == 'refs/heads/master'
+        uses: schneegans/dynamic-badges-action@v1.7.0
         with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: cae033f448436c4ba06eccbfa3a45a94
+          filename: coverage-badge.json
+          label: coverage
+          message: ${{ env.COVERAGE_PCT }}%
+          valColorRange: ${{ env.COVERAGE_PCT }}
+          minColorRange: 50
+          maxColorRange: 100
