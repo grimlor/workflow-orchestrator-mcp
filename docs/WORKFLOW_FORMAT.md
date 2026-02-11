@@ -6,12 +6,12 @@ Workflows are defined in standard markdown files with special tagged sections th
 
 Each workflow step follows this structure:
 
-```markdown
+````markdown
 ### 🔧 WORKFLOW STEP: [descriptive name]
-` ` `
+```
 Natural language description of what this step does.
 Can reference [VARIABLES] from prior steps.
-` ` `
+```
 
 ### 🛠️ TOOL: tool_name
 
@@ -25,7 +25,7 @@ Can reference [VARIABLES] from prior steps.
 - result contains "expected_field"
 - result.status == "success"
 - PR has at least 2 reviewers
-```
+````
 
 ## Section Reference
 
@@ -146,3 +146,21 @@ Variables flow between steps through the OUTPUTS → INPUTS mechanism:
 4. The orchestrator stores `ENTITY_ID = "abc123"` in workflow state
 5. Step B declares `📥 INPUTS: ENTITY_ID: ...` and references `[ENTITY_ID]` in its description
 6. When Step B runs, `[ENTITY_ID]` is replaced with `abc123`
+
+## Creating Workflows
+
+The workflow format uses emoji-prefixed headers (`🔧`, `🛠️`, `📥`, `📤`, `✅`) as section markers. While this makes workflows visually scannable, it also means **writing workflows by hand is impractical** — you'll almost certainly want AI assistance.
+
+### Recommended approach
+
+Ask your AI assistant to generate a workflow for you:
+
+> "Create a workflow orchestrator markdown file that does X, Y, and Z using the tools available in my MCP setup. Follow the format in docs/WORKFLOW_FORMAT.md."
+
+Or use an existing demo workflow as a template:
+
+> "Create a new workflow based on docs/demo workflows/simple_repo_lookup.md but targeting the `microsoft/typescript` repository instead."
+
+### Available demo workflows
+
+See [EXAMPLES.md](EXAMPLES.md) for a catalog of runnable demo workflows covering simple lookups, multi-step variable flow, complex assertions, and failure handling.
