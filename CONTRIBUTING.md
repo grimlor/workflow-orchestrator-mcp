@@ -55,19 +55,82 @@ src/workflow_orchestrator_mcp/
 
 ## Writing Tests
 
-Tests use pytest with a BDD naming style. Each test file covers a specific concern:
+This project follows **Behavior-Driven Development (BDD)** rigorously. Tests are not an afterthought — they are the specification. Understanding this philosophy is essential for getting contributions merged.
+
+### BDD Principles
+
+#### 1. Test Who/What/Why, Not How
+
+Specifications describe **behavioral contracts**, not implementation details. Every test uses the format:
+
+```python
+def test_<what_happens>_<under_condition>(self):
+    """
+    As a <who>
+    I need <what>
+    So that <why>
+    """
+```
+
+| Don't | Do |
+|-------|-----|
+| "When `_plan()` is called internally" | "When planning phase runs, transforms are applied" |
+| "Calls `foreachBatch()` with callback" | "Micro-batches are processed through batch phase" |
+
+#### 2. Mock I/O Boundaries Only
+
+**Mock at I/O boundaries:** file system reads, external services, network calls.
+
+**Never mock:** internal helper functions, class methods within the module under test, or pure computation logic.
+
+#### 3. 100% Coverage = Complete Specification
+
+If we don't have 100% test coverage, we have an incomplete specification. Every public method, every code path, every edge case must have a specification describing expected behavior. CI enforces this.
+
+#### 4. Test Public APIs Only
+
+Specifications exercise **only public APIs**. Private/internal functions (`_method`) achieve coverage through public API tests.
+
+| Don't | Do |
+|-------|-----|
+| `test__parse_internal_state()` | `test_parser_extracts_step_name_from_heading()` |
+| `test__build_prompt_fragment()` | `test_enriched_prompt_includes_tool_specification()` |
+
+### Test Organization
+
+Tests are organized by **scenario groups** — each file covers a specific behavioral concern:
 
 - Place tests in `tests/` with the `test_` prefix
+- Group related tests in classes named `Test<ScenarioBehavior>`
 - Use fixtures from `tests/conftest.py` where possible
 - Add workflow fixture files to `tests/fixtures/` as needed
 - Test both happy paths and error cases
 
-Example:
+### Example
 
 ```python
-def test_parser_extracts_step_name_from_heading(sample_workflow):
-    """Given a workflow with a named step, the parser extracts the step name."""
-    ...
+"""
+Scenario Group 5: Feedback Loop (report_step_result)
+"""
+
+class TestLLMReportsSuccessfulStepOutcome:
+    """Scenario 5.1: LLM reports successful step outcome"""
+
+    def test_step_recorded_as_passed(self, in_progress_workflow):
+        """
+        As a workflow orchestrator
+        I need the step recorded as passed when the LLM reports success
+        So that workflow progress is tracked accurately
+        """
+        report_step_result(
+            step_number=0,
+            status="passed",
+            assertion_results=[...],
+            output_variables={"REPO_NAME": "test-repo"},
+        )
+
+        state = get_state()
+        assert state.step_outcomes[0].status == StepStatus.PASSED
 ```
 
 ## Pull Request Process
