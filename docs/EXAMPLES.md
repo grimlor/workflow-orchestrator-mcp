@@ -1,166 +1,109 @@
 # Workflow Examples
 
-This document walks through example workflows to demonstrate key features. Working fixture files are also available in `tests/fixtures/`.
+This document provides an overview of the demo workflows included with the project and guidance for writing your own. All runnable workflow files are in [`docs/demo workflows/`](demo%20workflows/).
 
 ---
 
-## 1. Simple Single-Tool Workflow
+## Demo Workflows
 
-The simplest possible workflow — one step, one tool, one assertion.
+### 1. Simple Repository Lookup
 
-```markdown
-# Simple Workflow
+**File:** [simple_repo_lookup.md](demo%20workflows/simple_repo_lookup.md)
 
-### 🔧 WORKFLOW STEP: Run discovery tool
-` ` `
-Execute the discovery tool and verify it returns results.
-` ` `
+The simplest possible workflow — one step, one tool, basic assertions. Looks up the `actions/checkout` repository on GitHub.
 
-### 🛠️ TOOL: discovery_tool
-
-### ✅ ASSERT:
-- result.success == true
-```
+**Features demonstrated:**
+- Single step, single tool
+- Output variable capture
+- Basic assertions
 
 **What happens:**
 
-1. `load_workflow("simple_workflow.md")` parses 1 step
-2. `execute_workflow_step()` returns an enriched prompt naming `discovery_tool` with one assertion
-3. The LLM invokes `discovery_tool`, checks if `result.success == true`
-4. LLM calls `report_step_result(step_number=0, status="passed", assertion_results=[...])`
+1. `load_workflow("simple_repo_lookup.md")` parses 1 step
+2. `execute_workflow_step()` returns an enriched prompt naming `get_file_contents` with 3 assertions
+3. The LLM retrieves the repo metadata, evaluates assertions
+4. LLM calls `report_step_result(step_number=0, status="passed", ...)`
 5. Workflow completes
 
-See: [tests/fixtures/simple_workflow.md](../tests/fixtures/simple_workflow.md)
+---
+
+### 2. PR Review Workflow
+
+**File:** [pr_review_workflow.md](demo%20workflows/pr_review_workflow.md)
+
+A 5-step workflow demonstrating variable flow between steps. Discovers a repository, inspects branches, finds open PRs, reviews recent commits, and produces a PR readiness summary.
+
+**Features demonstrated:**
+- Variable flow across 5 steps (`REPO_OWNER`, `REPO_NAME`, `DEFAULT_BRANCH` → downstream steps)
+- Multiple tools across different steps
+- Summary generation using accumulated variables
 
 ---
 
-## 2. Multi-Step PR Creation with Variable Flow
+### 3. Test & Quality Assessment
 
-Demonstrates the core workflow orchestrator value: steps that build on each other through variable flow.
+**File:** [test_quality_assessment.md](demo%20workflows/test_quality_assessment.md)
 
-```markdown
-# Multi-Step PR Creation Workflow
+Inspects a repository's test infrastructure, CI configuration, and code quality indicators to produce a comprehensive quality scorecard with a numeric score.
 
-## Discovery Phase
+**Features demonstrated:**
+- Multiple tools per step (`get_repository_tree` + `get_file_contents`)
+- Complex assertions (checking for CI, linting, type checking)
+- Structured scorecard output with scoring rubric
 
-### 🔧 WORKFLOW STEP: Discover available repositories
-` ` `
-Find all repositories in the current project.
-Store the first repository name for use in next steps.
-` ` `
+---
 
-### 🛠️ TOOL: repository_discovery
+### 4. Failure Handling Demo
 
-### 📤 OUTPUTS:
-- result.repositories[0].name → REPO_NAME
+**File:** [failure_handling_demo.md](demo%20workflows/failure_handling_demo.md)
 
-### ✅ ASSERT:
-- result contains "repositories"
-- result.repositories.length > 0
+Intentionally triggers a failure at Step 2 by looking up a nonexistent repository. Demonstrates how the orchestrator halts execution and marks remaining steps as skipped.
 
-## Context Setup
+**Features demonstrated:**
+- Successful step followed by a failing step
+- Fail-fast behavior — workflow halts on assertion failure
+- Steps 3-4 skipped automatically
 
-### 🔧 WORKFLOW STEP: Set repository context
-` ` `
-Configure the working context to repository [REPO_NAME]
-` ` `
+**Expected outcome:**
 
-### 🛠️ TOOL: set_repository_context
-
-### 📥 INPUTS:
-- REPO_NAME: Repository name from discovery step
-
-### ✅ ASSERT:
-- result.success == true
-- result.repository == "[REPO_NAME]"
-
-## PR Creation
-
-### 🔧 WORKFLOW STEP: Create pull request with validation
-` ` `
-Create a PR from feature-branch to main with required reviewers
-` ` `
-
-### 🛠️ TOOLS:
-- get_current_branch
-- create_pull_request
-
-### 📤 OUTPUTS:
-- result.pullRequestId → PR_ID
-
-### ✅ ASSERT:
-- result.status == "active"
-- result.pullRequestId > 0
-- result.reviewers.length >= 2
+```
+Step 0: passed   (actions/checkout lookup succeeds)
+Step 1: failed   (nonexistent repo fails assertions)
+Step 2: skipped  (depends on failing step's output)
+Step 3: skipped  (workflow halted)
 ```
 
-**What happens:**
-
-1. **Step 0** — LLM calls `repository_discovery`, extracts `REPO_NAME` from results, reports back
-2. **Step 1** — Orchestrator substitutes `[REPO_NAME]` in the description. LLM calls `set_repository_context` with the discovered repo name
-3. **Step 2** — LLM calls `get_current_branch` then `create_pull_request`, extracts `PR_ID`, evaluates 3 assertions
-
-**Variable flow:** `REPO_NAME` flows from Step 0 → Step 1. `PR_ID` is captured in Step 2 for potential downstream use.
-
-See: [tests/fixtures/multi_step_workflow.md](../tests/fixtures/multi_step_workflow.md)
+To retry after failure, call `reset_workflow()` to return to step 0 while keeping the workflow loaded.
 
 ---
 
-## 3. Data Quality Validation with Complex Assertions
+### 5. GitHub Repository Analysis
 
-Demonstrates multiple assertions and cross-step data dependencies.
+**File:** [analyze_github_repo.md](demo%20workflows/analyze_github_repo.md)
 
-```markdown
-# Data Quality Workflow
+A comprehensive 7-step workflow that analyzes `grimlor/workflow-orchestrator-mcp` end-to-end — the orchestrator analyzing itself. Produces a structured assessment of architecture, quality, and health with a score out of 10.
 
-## Validation Phase
-
-### 🔧 WORKFLOW STEP: Validate data quality
-` ` `
-Run data quality checks on the target dataset.
-Verify row count, null percentage, and schema compliance.
-` ` `
-
-### 🛠️ TOOL: data_quality_check
-
-### ✅ ASSERT:
-- result.row_count > 1000
-- result.null_percentage < 5
-- result.schema_valid == true
-- result contains "quality_score"
-
-## Report Phase
-
-### 🔧 WORKFLOW STEP: Generate quality report
-` ` `
-Generate a summary report of data quality results.
-` ` `
-
-### 🛠️ TOOLS:
-- generate_report
-- send_notification
-
-### 📥 INPUTS:
-- QUALITY_SCORE: Overall quality score from validation
-
-### 📤 OUTPUTS:
-- result.report_url → REPORT_URL
-
-### ✅ ASSERT:
-- result.report_url starts with "https://"
-- result.notification_sent == true
-```
-
-**Key features demonstrated:**
-- **4 assertions on a single step** — the LLM evaluates each independently
-- **Multi-tool step** — `generate_report` and `send_notification` called in order
-- **Natural language assertions** — `result.report_url starts with "https://"` is not code, it's human-readable intent that the LLM interprets
-
-See: [tests/fixtures/workflow_with_assertions.md](../tests/fixtures/workflow_with_assertions.md)
+**Features demonstrated:**
+- 7-step multi-phase workflow (Discovery → Structure → Quality → Activity → Assessment)
+- Rich variable flow throughout
+- Natural language assertions
+- Self-referential demo (the orchestrator analyzing its own repo)
 
 ---
 
-## 4. Failure Handling
+### 6. Azure DevOps MCP Analysis
+
+**File:** [analyze_azure_devops_mcp.md](demo%20workflows/analyze_azure_devops_mcp.md)
+
+The same 7-step analysis workflow targeting `microsoft/azure-devops-mcp`. Compare results with the self-analysis to see how the workflow adapts to a very different project.
+
+**Features demonstrated:**
+- Same workflow structure applied to a different repository
+- Shows how variable flow and assertions adapt to varying data
+
+---
+
+## Failure Handling Behavior
 
 When a step fails its assertions, the orchestrator halts execution and marks remaining steps as skipped.
 
@@ -193,8 +136,6 @@ The execution report from `get_workflow_state()` shows:
 - Per-assertion detail explaining the failure
 - Remaining steps marked as skipped
 
-To retry, call `reset_workflow()` to return to step 0 while keeping the workflow loaded.
-
 ---
 
 ## Writing Your Own Workflows
@@ -212,3 +153,5 @@ To retry, call `reset_workflow()` to return to step 0 while keeping the workflow
 - Name variables descriptively — `REPO_NAME` is better than `VAR1`
 - Organize related steps under `##` section headings for readability
 - One tool per step is simplest; use multi-tool steps when operations are tightly coupled
+
+See [WORKFLOW_FORMAT.md](WORKFLOW_FORMAT.md) for the full format specification and test fixtures in [`tests/fixtures/`](../tests/fixtures/) for minimal parsing examples.
