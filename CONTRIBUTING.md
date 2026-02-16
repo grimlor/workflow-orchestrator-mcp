@@ -6,7 +6,7 @@ Thanks for your interest in contributing! This guide covers development setup, c
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.11+
 - [uv](https://docs.astral.sh/uv/) package manager
 
 ### Getting Started
@@ -23,11 +23,15 @@ uv sync --all-extras
 ### Running Quality Checks
 
 ```bash
-uv run pytest                    # Run tests (77 BDD specs)
-uv run pytest --cov              # Run tests with coverage
-uv run ruff check src/ tests/    # Lint
-uv run mypy src/                 # Type check
+uv run task test                 # Run tests (77 BDD specs)
+uv run task cov                  # Run tests with coverage
+uv run task lint                 # Lint (with auto-fix)
+uv run task format               # Format code
+uv run task type                 # Type check
+uv run task check                # lint + type + test (all-in-one)
 ```
+
+> **Note:** `uv run` is optional when the venv is activated via direnv.
 
 All checks must pass before submitting a pull request.
 
