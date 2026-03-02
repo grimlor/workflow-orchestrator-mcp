@@ -20,6 +20,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# Auto-generated version file (hatch-vcs)
+src/workflow_orchestrator_mcp/_version.py
+
 # Virtual Environment
 .venv/
 venv/

@@ -19,12 +19,16 @@ from .common.workflow_state import (
 from .tools.workflow_tools import (
     execute_workflow_step,
     get_workflow_state,
+    get_workflow_template,
     load_workflow,
     report_step_result,
     reset_workflow,
 )
 
-__version__ = "0.1.0"
+try:
+    from ._version import __version__
+except ImportError:  # editable install or no build
+    __version__ = "0.0.0+unknown"
 
 __all__ = [
     "ActionableError",
@@ -37,6 +41,7 @@ __all__ = [
     "execute_workflow_step",
     "report_step_result",
     "get_workflow_state",
+    "get_workflow_template",
     "reset_workflow",
     "get_state",
     "require_loaded_workflow",
