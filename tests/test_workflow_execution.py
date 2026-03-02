@@ -6,7 +6,9 @@ load_workflow → (execute_workflow_step → report_step_result)* → get_workfl
 """
 
 
-from workflow_orchestrator_mcp.common.workflow_state import StepStatus, get_state
+from typing import Any
+
+from workflow_orchestrator_mcp.common.workflow_state import StepStatus, WorkflowState, get_state
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
     get_workflow_state,
@@ -16,7 +18,12 @@ from workflow_orchestrator_mcp.tools.workflow_tools import (
 )
 
 
-def _execute_and_report(state, step_idx, status="passed", outputs=None):
+def _execute_and_report(
+    state: WorkflowState,
+    step_idx: int,
+    status: str = "passed",
+    outputs: dict[str, str] | None = None,
+) -> None:
     """Helper: execute a step and report its result via public API"""
     execute_workflow_step()
     assertions = state.steps[step_idx].assertions
@@ -35,7 +42,7 @@ def _execute_and_report(state, step_idx, status="passed", outputs=None):
 class TestExecuteCompleteWorkflowSuccessfully:
     """Scenario 6.1: Execute complete workflow successfully"""
 
-    def test_all_steps_pass_in_order(self, mock_file_system):
+    def test_all_steps_pass_in_order(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need all steps to execute in order and pass
@@ -53,7 +60,7 @@ class TestExecuteCompleteWorkflowSuccessfully:
         assert state.is_failed is False
         assert len(state.completed_steps) == 3
 
-    def test_all_variables_collected(self, mock_file_system):
+    def test_all_variables_collected(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need all output variables collected across steps
@@ -73,7 +80,7 @@ class TestExecuteCompleteWorkflowSuccessfully:
 class TestWorkflowExecutionWithStepFailure:
     """Scenario 6.2: Workflow execution with step failure"""
 
-    def test_failure_at_step2_shows_correct_statuses(self, mock_file_system):
+    def test_failure_at_step2_shows_correct_statuses(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need the report to show which step failed and which were skipped
@@ -97,7 +104,7 @@ class TestWorkflowExecutionWithStepFailure:
 class TestWorkflowStateTracking:
     """Scenario 6.3: Workflow state tracking"""
 
-    def test_query_state_during_execution(self, mock_file_system):
+    def test_query_state_during_execution(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need to query state mid-execution
@@ -117,7 +124,7 @@ class TestWorkflowStateTracking:
         assert 0 in state_dict["completed_steps"]
         assert state_dict["is_complete"] is False
 
-    def test_state_shows_current_step(self, mock_file_system):
+    def test_state_shows_current_step(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need the state to indicate which step is current
@@ -138,7 +145,7 @@ class TestResumeWorkflowFromFailurePoint:
     State is in-memory; restarting the server process loses workflow state.
     """
 
-    def test_resume_skips_completed_steps(self, mock_file_system):
+    def test_resume_skips_completed_steps(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need to resume from the failure point after fixing an issue

@@ -35,7 +35,7 @@ class TestListTools:
     """Server exposes workflow orchestration tools to MCP clients"""
 
     @pytest.mark.asyncio
-    async def test_lists_all_five_tools(self):
+    async def test_lists_all_six_tools(self):
         """
         As an MCP client
         I need to discover available workflow tools
@@ -49,7 +49,8 @@ class TestListTools:
         assert "report_step_result" in tool_names
         assert "get_workflow_state" in tool_names
         assert "reset_workflow" in tool_names
-        assert len(tools) == 5
+        assert "get_workflow_template" in tool_names
+        assert len(tools) == 6
 
     @pytest.mark.asyncio
     async def test_each_tool_has_input_schema(self):

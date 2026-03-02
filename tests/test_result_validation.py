@@ -5,10 +5,13 @@ Tests the public API: report_step_result() and its effect on workflow state.
 Assertions are embedded in prompts (Group 2) and results reported back here.
 """
 
+from typing import Any
+
 import pytest
 
 from workflow_orchestrator_mcp.common.workflow_state import (
     StepStatus,
+    WorkflowState,
     get_state,
 )
 from workflow_orchestrator_mcp.tools.workflow_tools import (
@@ -19,7 +22,7 @@ from workflow_orchestrator_mcp.tools.workflow_tools import (
 
 
 @pytest.fixture
-def in_progress_step(mock_file_system):
+def in_progress_step(mock_file_system: tuple[Any, Any]) -> WorkflowState:
     """Load workflow and start first step so report_step_result can be called"""
     load_workflow("/path/to/workflow.md")
     execute_workflow_step()  # marks step 0 as in-progress
@@ -29,7 +32,7 @@ def in_progress_step(mock_file_system):
 class TestAssertionsEmbeddedInPrompt:
     """Scenario 3.1: Assertions embedded in enriched prompt"""
 
-    def test_enriched_prompt_contains_each_assertion(self, mock_file_system):
+    def test_enriched_prompt_contains_each_assertion(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow orchestrator
         I need each assertion embedded in the prompt
@@ -47,7 +50,7 @@ class TestAssertionsEmbeddedInPrompt:
 class TestLLMReportsAssertionResults:
     """Scenario 3.2: LLM reports assertion results via callback"""
 
-    def test_all_assertion_results_recorded(self, in_progress_step):
+    def test_all_assertion_results_recorded(self, in_progress_step: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the LLM's assertion results recorded in state
@@ -68,7 +71,7 @@ class TestLLMReportsAssertionResults:
         assert len(outcome.assertion_results) == 2
         assert all(r.passed for r in outcome.assertion_results)
 
-    def test_step_marked_passed_when_all_pass(self, in_progress_step):
+    def test_step_marked_passed_when_all_pass(self, in_progress_step: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the step marked passed when all assertions succeed
@@ -91,7 +94,7 @@ class TestLLMReportsAssertionResults:
 class TestStepMarkedFailedOnAssertionFailure:
     """Scenario 3.3: Step marked failed when any assertion fails"""
 
-    def test_step_fails_when_one_assertion_fails(self, in_progress_step):
+    def test_step_fails_when_one_assertion_fails(self, in_progress_step: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the step marked failed when any assertion fails
@@ -110,7 +113,7 @@ class TestStepMarkedFailedOnAssertionFailure:
         outcome = state.step_outcomes[0]
         assert outcome.status == StepStatus.FAILED
 
-    def test_failure_detail_preserved(self, in_progress_step):
+    def test_failure_detail_preserved(self, in_progress_step: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the failure detail from the LLM preserved
@@ -133,7 +136,7 @@ class TestStepMarkedFailedOnAssertionFailure:
 class TestAssertionCountMismatch:
     """Scenario 3.4: Assertion count mismatch detection"""
 
-    def test_mismatch_flagged_when_fewer_results(self, in_progress_step):
+    def test_mismatch_flagged_when_fewer_results(self, in_progress_step: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need to detect when the LLM reports fewer assertions than expected

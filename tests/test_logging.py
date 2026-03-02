@@ -10,7 +10,7 @@ import logging
 class TestLoggerConfiguration:
     """The workflow orchestrator logger is configured for MCP operation"""
 
-    def test_logger_exists_with_correct_name(self):
+    def test_logger_exists_with_correct_name(self) -> None:
         """
         As an MCP server
         I need a named logger
@@ -20,7 +20,7 @@ class TestLoggerConfiguration:
 
         assert logger.name == "workflow-orchestrator-mcp"
 
-    def test_logger_level_is_info(self):
+    def test_logger_level_is_info(self) -> None:
         """
         As an MCP server operator
         I need the default log level set to INFO
@@ -30,7 +30,7 @@ class TestLoggerConfiguration:
 
         assert logger.level == logging.INFO
 
-    def test_logger_has_stderr_handler(self):
+    def test_logger_has_stderr_handler(self) -> None:
         """
         As an MCP server
         I need logs written to stderr (not stdout)

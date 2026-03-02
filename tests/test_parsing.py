@@ -5,6 +5,7 @@ Tests the public API: load_workflow()
 Mocks only I/O: file system reads via pathlib.Path
 """
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -16,7 +17,7 @@ from workflow_orchestrator_mcp.tools.workflow_tools import load_workflow
 class TestLoadWorkflowWithToolSpecifications:
     """Scenario 1.1: Load workflow with tool specifications"""
 
-    def test_load_extracts_steps_with_tool_names(self, mock_file_system):
+    def test_load_extracts_steps_with_tool_names(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need the parser to extract tool names from TOOL sections
@@ -31,7 +32,7 @@ class TestLoadWorkflowWithToolSpecifications:
         assert "tool_names" in first_step
         assert len(first_step["tool_names"]) > 0
 
-    def test_load_returns_step_metadata(self, mock_file_system):
+    def test_load_returns_step_metadata(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need each step to include its name and description
@@ -48,7 +49,7 @@ class TestLoadWorkflowWithToolSpecifications:
 class TestLoadWorkflowWithMultipleTools:
     """Scenario 1.2: Load workflow with multiple tools per step"""
 
-    def test_multi_tool_step_has_ordered_list(self, mock_file_system):
+    def test_multi_tool_step_has_ordered_list(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need multi-tool steps to preserve tool order
@@ -70,7 +71,7 @@ class TestLoadWorkflowWithMultipleTools:
 class TestParseAssertionsFromWorkflow:
     """Scenario 1.3: Parse assertions from workflow"""
 
-    def test_assertions_extracted_per_step(self, mock_file_system):
+    def test_assertions_extracted_per_step(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need assertions to be extracted from ASSERT sections
@@ -86,7 +87,7 @@ class TestParseAssertionsFromWorkflow:
         assert 'result contains "repositories"' in state.steps[0].assertions
         assert "result.repositories.length > 0" in state.steps[0].assertions
 
-    def test_assertions_associated_with_correct_step(self, mock_file_system):
+    def test_assertions_associated_with_correct_step(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need assertions tied to the step they validate
@@ -105,7 +106,7 @@ class TestParseAssertionsFromWorkflow:
 class TestParseInputOutputSpecifications:
     """Scenario 1.4: Parse input/output specifications"""
 
-    def test_inputs_define_required_variables(self, mock_file_system):
+    def test_inputs_define_required_variables(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need INPUTS sections parsed into variable requirements
@@ -121,7 +122,7 @@ class TestParseInputOutputSpecifications:
         assert "REPO_NAME" in step_with_inputs.inputs
         assert step_with_inputs.inputs["REPO_NAME"] != ""
 
-    def test_outputs_define_variable_mappings(self, mock_file_system):
+    def test_outputs_define_variable_mappings(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need OUTPUTS sections parsed into variable mappings
@@ -140,7 +141,7 @@ class TestParseInputOutputSpecifications:
 class TestRejectWorkflowWithoutToolSpecifications:
     """Scenario 1.5: Reject workflow without tool specifications"""
 
-    def test_raises_actionable_error_for_missing_tools(self, workflow_without_tools):
+    def test_raises_actionable_error_for_missing_tools(self, workflow_without_tools: str) -> None:
         """
         As a workflow author
         I need clear feedback when I forget TOOL sections
@@ -153,7 +154,7 @@ class TestRejectWorkflowWithoutToolSpecifications:
 
             assert "tool" in str(exc_info.value).lower()
 
-    def test_raises_actionable_error_for_empty_workflow(self, empty_workflow_markdown):
+    def test_raises_actionable_error_for_empty_workflow(self, empty_workflow_markdown: str) -> None:
         """
         As a workflow author
         I need feedback when no steps are found
@@ -164,7 +165,7 @@ class TestRejectWorkflowWithoutToolSpecifications:
             with pytest.raises(ActionableError):
                 load_workflow("/path/to/empty.md")
 
-    def test_raises_actionable_error_for_missing_file(self):
+    def test_raises_actionable_error_for_missing_file(self) -> None:
         """
         As a workflow author
         I need clear feedback when the file doesn't exist

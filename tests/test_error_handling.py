@@ -4,6 +4,7 @@ Scenario Group 7: Error Handling and Reporting
 Tests error handling and the final workflow execution report.
 """
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -21,7 +22,7 @@ from workflow_orchestrator_mcp.tools.workflow_tools import (
 class TestActionableErrorForParsingFailure:
     """Scenario 7.1: Actionable error for parsing failure"""
 
-    def test_malformed_markdown_raises_actionable_error(self):
+    def test_malformed_markdown_raises_actionable_error(self) -> None:
         """
         As a workflow author
         I need clear errors when my markdown is malformed
@@ -42,7 +43,7 @@ Step with empty name
             # Should contain actionable information
             assert len(error) > 0
 
-    def test_error_suggests_correct_format(self, workflow_without_tools):
+    def test_error_suggests_correct_format(self, workflow_without_tools: str) -> None:
         """
         As a workflow author
         I need error messages that suggest the correct format
@@ -60,7 +61,7 @@ Step with empty name
 class TestWorkflowExecutionReport:
     """Scenario 7.2: Workflow execution report"""
 
-    def test_report_shows_all_step_statuses(self, mock_file_system):
+    def test_report_shows_all_step_statuses(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need the execution report to show each step's status
@@ -101,7 +102,7 @@ class TestWorkflowExecutionReport:
         assert state_dict["step_outcomes"][0]["status"] == "passed"
         assert state_dict["step_outcomes"][1]["status"] == "failed"
 
-    def test_report_shows_assertion_detail(self, mock_file_system):
+    def test_report_shows_assertion_detail(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need assertion results with LLM-provided detail per step
@@ -131,7 +132,7 @@ class TestWorkflowExecutionReport:
 class TestDetailedFailureDiagnostics:
     """Scenario 7.3: Detailed failure diagnostics"""
 
-    def test_failure_shows_assertion_text_and_detail(self, mock_file_system):
+    def test_failure_shows_assertion_text_and_detail(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need the failed assertion text and LLM explanation
@@ -163,7 +164,7 @@ class TestDetailedFailureDiagnostics:
         assert "result.repositories.length > 0" in failed_assertions[0]["assertion"]
         assert "empty array" in failed_assertions[0]["detail"].lower()
 
-    def test_error_message_preserved_in_report(self, mock_file_system):
+    def test_error_message_preserved_in_report(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow author
         I need the error message from the LLM preserved in the report

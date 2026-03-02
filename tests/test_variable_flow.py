@@ -6,10 +6,12 @@ execute_workflow_step() (variable substitution in prompts).
 """
 
 
+from typing import Any
+
 import pytest
 
 from workflow_orchestrator_mcp.common.error_handling import ActionableError
-from workflow_orchestrator_mcp.common.workflow_state import get_state
+from workflow_orchestrator_mcp.common.workflow_state import WorkflowState, get_state
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
     load_workflow,
@@ -18,13 +20,13 @@ from workflow_orchestrator_mcp.tools.workflow_tools import (
 
 
 @pytest.fixture
-def loaded_workflow(mock_file_system):
+def loaded_workflow(mock_file_system: tuple[Any, Any]) -> WorkflowState:
     """Load a valid workflow for variable flow tests"""
     load_workflow("/path/to/workflow.md")
     return get_state()
 
 
-def _advance_step(state, step_number, outputs=None):
+def _advance_step(state: WorkflowState, step_number: int, outputs: dict[str, str] | None = None) -> None:
     """Helper: simulate executing and reporting a step via public API"""
     execute_workflow_step()
     report_step_result(
@@ -41,7 +43,7 @@ def _advance_step(state, step_number, outputs=None):
 class TestLLMReportsOutputVariables:
     """Scenario 4.1: LLM reports output variables via callback"""
 
-    def test_output_variable_stored_in_state(self, loaded_workflow):
+    def test_output_variable_stored_in_state(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need output variables from the LLM stored in state
@@ -66,7 +68,7 @@ class TestLLMReportsOutputVariables:
 class TestSubstituteVariableInNextStep:
     """Scenario 4.2: Substitute variable in next step's enriched prompt"""
 
-    def test_repo_name_substituted_in_step2_prompt(self, loaded_workflow):
+    def test_repo_name_substituted_in_step2_prompt(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need variables from step 1 substituted into step 2's prompt
@@ -86,7 +88,7 @@ class TestSubstituteVariableInNextStep:
 class TestVariableSubstitutionInDescription:
     """Scenario 4.3: Variable substitution in step description"""
 
-    def test_description_shows_substituted_value(self, loaded_workflow):
+    def test_description_shows_substituted_value(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need [VARIABLE_NAME] in descriptions replaced with actual values
@@ -104,7 +106,7 @@ class TestVariableSubstitutionInDescription:
 class TestMissingRequiredInputVariable:
     """Scenario 4.4: Missing required input variable"""
 
-    def test_raises_error_when_input_variable_missing(self, loaded_workflow):
+    def test_raises_error_when_input_variable_missing(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need an error when a required input variable isn't available
@@ -131,7 +133,7 @@ class TestMissingRequiredInputVariable:
 class TestChainOutputsThroughMultipleSteps:
     """Scenario 4.5: Chain outputs through multiple steps"""
 
-    def test_variables_flow_through_chain(self, loaded_workflow):
+    def test_variables_flow_through_chain(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need variables to chain through step 1 → step 2 → step 3

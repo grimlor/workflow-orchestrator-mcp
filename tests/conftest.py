@@ -1,6 +1,7 @@
 """Shared pytest fixtures for workflow-orchestrator-mcp tests"""
 
-from unittest.mock import patch
+from collections.abc import Generator
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -8,7 +9,7 @@ from workflow_orchestrator_mcp.common.workflow_state import _workflow_state
 
 
 @pytest.fixture(autouse=True)
-def reset_workflow_state():
+def reset_workflow_state() -> Generator[None, None, None]:
     """Reset global workflow state before each test"""
     _workflow_state.file_path = ""
     _workflow_state.steps = []
@@ -25,7 +26,7 @@ def reset_workflow_state():
 
 
 @pytest.fixture
-def valid_workflow_markdown():
+def valid_workflow_markdown() -> str:
     """A well-formed workflow with multiple steps, tools, assertions, and variable flow"""
     return """# Test Workflow
 
@@ -81,7 +82,7 @@ Create a PR from feature-branch to main
 
 
 @pytest.fixture
-def simple_workflow_markdown():
+def simple_workflow_markdown() -> str:
     """A minimal single-step workflow"""
     return """# Simple Workflow
 
@@ -98,7 +99,7 @@ Execute the discovery tool and verify results.
 
 
 @pytest.fixture
-def workflow_without_tools():
+def workflow_without_tools() -> str:
     """A workflow missing tool specifications"""
     return """# Bad Workflow
 
@@ -110,7 +111,7 @@ This step has no TOOL section.
 
 
 @pytest.fixture
-def empty_workflow_markdown():
+def empty_workflow_markdown() -> str:
     """A markdown file with no workflow steps"""
     return """# Empty Workflow
 
@@ -119,7 +120,7 @@ This workflow has no executable steps.
 
 
 @pytest.fixture
-def mock_file_system(valid_workflow_markdown):
+def mock_file_system(valid_workflow_markdown: str) -> Generator[tuple[MagicMock, MagicMock], None, None]:
     """Mock file system operations"""
     with patch('pathlib.Path.exists') as mock_exists, \
          patch('pathlib.Path.read_text') as mock_read:

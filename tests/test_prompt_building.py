@@ -6,9 +6,11 @@ Relies on load_workflow() to populate state, so uses pre-loaded state helper.
 """
 
 
+from typing import Any
+
 import pytest
 
-from workflow_orchestrator_mcp.common.workflow_state import get_state
+from workflow_orchestrator_mcp.common.workflow_state import WorkflowState, get_state
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
     load_workflow,
@@ -16,7 +18,7 @@ from workflow_orchestrator_mcp.tools.workflow_tools import (
 
 
 @pytest.fixture
-def loaded_workflow(mock_file_system):
+def loaded_workflow(mock_file_system: tuple[Any, Any]) -> WorkflowState:
     """Load a valid workflow and return the state for prompt-building tests"""
     load_workflow("/path/to/workflow.md")
     return get_state()
@@ -25,7 +27,7 @@ def loaded_workflow(mock_file_system):
 class TestBuildEnrichedPromptForSingleTool:
     """Scenario 2.1: Build enriched prompt for single-tool step"""
 
-    def test_prompt_includes_step_description(self, loaded_workflow):
+    def test_prompt_includes_step_description(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the enriched prompt to include the step description
@@ -37,7 +39,7 @@ class TestBuildEnrichedPromptForSingleTool:
         prompt = result["prompt"]
         assert "Find all repositories" in prompt
 
-    def test_prompt_names_the_tool(self, loaded_workflow):
+    def test_prompt_names_the_tool(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the enriched prompt to name the tool
@@ -48,7 +50,7 @@ class TestBuildEnrichedPromptForSingleTool:
         prompt = result["prompt"]
         assert "repository_discovery" in prompt
 
-    def test_prompt_includes_assertion_criteria(self, loaded_workflow):
+    def test_prompt_includes_assertion_criteria(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the enriched prompt to include assertion criteria
@@ -63,7 +65,7 @@ class TestBuildEnrichedPromptForSingleTool:
 class TestBuildEnrichedPromptForMultiTool:
     """Scenario 2.2: Build enriched prompt for multi-tool step"""
 
-    def test_prompt_lists_all_tools_in_order(self, loaded_workflow):
+    def test_prompt_lists_all_tools_in_order(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the enriched prompt to list multiple tools
@@ -96,7 +98,7 @@ class TestBuildEnrichedPromptForMultiTool:
 class TestIncludeResolvedVariablesInPrompt:
     """Scenario 2.3: Include resolved variables in enriched prompt"""
 
-    def test_variable_placeholders_replaced(self, loaded_workflow):
+    def test_variable_placeholders_replaced(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need variable placeholders resolved in the prompt
@@ -124,7 +126,7 @@ class TestIncludeResolvedVariablesInPrompt:
 class TestPromptIncludesCallbackInstructions:
     """Scenario 2.4: Prompt includes callback instructions"""
 
-    def test_prompt_instructs_report_step_result(self, loaded_workflow):
+    def test_prompt_instructs_report_step_result(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the prompt to instruct the LLM to call report_step_result
@@ -135,7 +137,7 @@ class TestPromptIncludesCallbackInstructions:
         prompt = result["prompt"]
         assert "report_step_result" in prompt
 
-    def test_prompt_specifies_expected_assertion_count(self, loaded_workflow):
+    def test_prompt_specifies_expected_assertion_count(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the prompt to tell the LLM how many assertions to evaluate
@@ -147,7 +149,7 @@ class TestPromptIncludesCallbackInstructions:
         # Step 1 has 2 assertions
         assert "2" in prompt
 
-    def test_prompt_specifies_output_variable_names(self, loaded_workflow):
+    def test_prompt_specifies_output_variable_names(self, loaded_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the prompt to name expected output variables

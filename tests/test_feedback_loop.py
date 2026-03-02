@@ -5,10 +5,12 @@ Tests the report_step_result() callback tool — the central innovation
 of the workflow orchestrator over the demo-assistant.
 """
 
+from typing import Any
+
 import pytest
 
 from workflow_orchestrator_mcp.common.error_handling import ActionableError
-from workflow_orchestrator_mcp.common.workflow_state import StepStatus, get_state
+from workflow_orchestrator_mcp.common.workflow_state import StepStatus, WorkflowState, get_state
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
     load_workflow,
@@ -17,7 +19,7 @@ from workflow_orchestrator_mcp.tools.workflow_tools import (
 
 
 @pytest.fixture
-def in_progress_workflow(mock_file_system):
+def in_progress_workflow(mock_file_system: tuple[Any, Any]) -> WorkflowState:
     """Load workflow and begin first step"""
     load_workflow("/path/to/workflow.md")
     execute_workflow_step()  # starts step 0
@@ -27,7 +29,7 @@ def in_progress_workflow(mock_file_system):
 class TestLLMReportsSuccessfulStepOutcome:
     """Scenario 5.1: LLM reports successful step outcome"""
 
-    def test_step_recorded_as_passed(self, in_progress_workflow):
+    def test_step_recorded_as_passed(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the step recorded as passed when the LLM reports success
@@ -46,7 +48,7 @@ class TestLLMReportsSuccessfulStepOutcome:
         state = get_state()
         assert state.step_outcomes[0].status == StepStatus.PASSED
 
-    def test_returns_next_step_prompt(self, in_progress_workflow):
+    def test_returns_next_step_prompt(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the next step's enriched prompt returned after a successful report
@@ -69,7 +71,7 @@ class TestLLMReportsSuccessfulStepOutcome:
 class TestLLMReportsFailedStepOutcome:
     """Scenario 5.2: LLM reports failed step outcome"""
 
-    def test_step_marked_failed(self, in_progress_workflow):
+    def test_step_marked_failed(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need the step marked failed when the LLM reports failure
@@ -84,7 +86,7 @@ class TestLLMReportsFailedStepOutcome:
         state = get_state()
         assert state.step_outcomes[0].status == StepStatus.FAILED
 
-    def test_subsequent_steps_skipped(self, in_progress_workflow):
+    def test_subsequent_steps_skipped(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need remaining steps marked as skipped after a failure
@@ -99,7 +101,7 @@ class TestLLMReportsFailedStepOutcome:
         state = get_state()
         assert state.is_failed is True
 
-    def test_returns_failure_summary(self, in_progress_workflow):
+    def test_returns_failure_summary(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need a failure summary returned when a step fails
@@ -117,7 +119,7 @@ class TestLLMReportsFailedStepOutcome:
 class TestLLMReportsPartialAssertionResults:
     """Scenario 5.3: LLM reports partial assertion results"""
 
-    def test_mismatch_flagged(self, in_progress_workflow):
+    def test_mismatch_flagged(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need a warning when the LLM reports fewer assertions than expected
@@ -141,7 +143,7 @@ class TestLLMReportsPartialAssertionResults:
 class TestOutputVariablesMergedOnSuccess:
     """Scenario 5.4: Output variables merged into state on success"""
 
-    def test_variables_available_after_success(self, in_progress_workflow):
+    def test_variables_available_after_success(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need output variables merged into state when a step passes
@@ -160,7 +162,7 @@ class TestOutputVariablesMergedOnSuccess:
         state = get_state()
         assert state.variables["REPO_NAME"] == "merged-repo"
 
-    def test_variables_not_merged_on_failure(self, in_progress_workflow):
+    def test_variables_not_merged_on_failure(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need output variables NOT merged when a step fails
@@ -183,7 +185,7 @@ class TestOutputVariablesMergedOnSuccess:
 class TestReportStepResultOutOfOrder:
     """Scenario 5.5: report_step_result called out of order"""
 
-    def test_raises_error_for_wrong_step(self, in_progress_workflow):
+    def test_raises_error_for_wrong_step(self, in_progress_workflow: WorkflowState) -> None:
         """
         As a workflow orchestrator
         I need an error when the LLM reports for the wrong step

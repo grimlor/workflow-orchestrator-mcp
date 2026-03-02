@@ -5,6 +5,7 @@ Tests for behaviors that weren't covered by the original 7 scenario groups.
 Each test specifies a behavioral contract for an edge case or alternate path.
 """
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -29,7 +30,7 @@ from workflow_orchestrator_mcp.tools.workflow_tools import (
 class TestNoWorkflowLoadedGuard:
     """Behaviors when operating on state before any workflow is loaded"""
 
-    def test_get_workflow_state_raises_when_nothing_loaded(self):
+    def test_get_workflow_state_raises_when_nothing_loaded(self) -> None:
         """
         As a workflow user
         I need a clear error when querying state before loading
@@ -40,7 +41,7 @@ class TestNoWorkflowLoadedGuard:
 
         assert "no workflow has been loaded" in str(exc_info.value).lower()
 
-    def test_reset_workflow_raises_when_nothing_loaded(self):
+    def test_reset_workflow_raises_when_nothing_loaded(self) -> None:
         """
         As a workflow user
         I need a clear error when resetting before loading
@@ -51,7 +52,7 @@ class TestNoWorkflowLoadedGuard:
 
         assert "no workflow has been loaded" in str(exc_info.value).lower()
 
-    def test_require_loaded_workflow_raises_actionable_error(self):
+    def test_require_loaded_workflow_raises_actionable_error(self) -> None:
         """
         As a workflow orchestrator
         I need the guard function to raise with load instructions
@@ -66,7 +67,7 @@ class TestNoWorkflowLoadedGuard:
 class TestExecuteWorkflowStepGuards:
     """Edge cases for execute_workflow_step when workflow is in terminal state"""
 
-    def test_raises_when_workflow_is_complete(self, mock_file_system):
+    def test_raises_when_workflow_is_complete(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow user
         I need an error when all steps are already done
@@ -96,7 +97,7 @@ class TestExecuteWorkflowStepGuards:
 
         assert "complete" in str(exc_info.value).lower()
 
-    def test_raises_when_workflow_has_failed(self, mock_file_system):
+    def test_raises_when_workflow_has_failed(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow user
         I need an error when the workflow has already failed
@@ -123,7 +124,7 @@ class TestExecuteWorkflowStepGuards:
 class TestStepOutcomeAllAssertionsPassed:
     """Specification for StepOutcome.all_assertions_passed property"""
 
-    def test_true_when_all_pass(self):
+    def test_true_when_all_pass(self) -> None:
         """
         As a workflow orchestrator
         I need to know when all assertions in an outcome passed
@@ -139,7 +140,7 @@ class TestStepOutcomeAllAssertionsPassed:
         )
         assert outcome.all_assertions_passed is True
 
-    def test_false_when_any_fails(self):
+    def test_false_when_any_fails(self) -> None:
         """
         As a workflow orchestrator
         I need to detect when any assertion failed
@@ -155,7 +156,7 @@ class TestStepOutcomeAllAssertionsPassed:
         )
         assert outcome.all_assertions_passed is False
 
-    def test_true_when_no_assertions(self):
+    def test_true_when_no_assertions(self) -> None:
         """
         As a workflow orchestrator
         I need steps without assertions to vacuously pass
@@ -172,7 +173,7 @@ class TestStepOutcomeAllAssertionsPassed:
 class TestParserEdgeCases:
     """Parsing edge cases not covered by Group 1 scenarios"""
 
-    def test_file_read_error_raises_actionable_error(self):
+    def test_file_read_error_raises_actionable_error(self) -> None:
         """
         As a workflow author
         I need a clear error when the file can't be read (permissions, encoding)
@@ -185,7 +186,7 @@ class TestParserEdgeCases:
 
             assert "failed to read" in str(exc_info.value).lower()
 
-    def test_ascii_arrow_in_outputs(self):
+    def test_ascii_arrow_in_outputs(self) -> None:
         """
         As a workflow author
         I need -> (ASCII arrow) to work in OUTPUTS alongside →
@@ -219,7 +220,7 @@ Run extraction tool
 class TestExecuteWorkflowStepDefensiveGuard:
     """Defensive behavior when get_current_step returns None unexpectedly"""
 
-    def test_step_none_after_guards_pass_raises_actionable_error(self, mock_file_system):
+    def test_step_none_after_guards_pass_raises_actionable_error(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow orchestrator
         I need a safety net if get_current_step() returns None despite guards passing
@@ -242,7 +243,7 @@ class TestExecuteWorkflowStepDefensiveGuard:
 class TestUnresolvedVariablePlaceholder:
     """Variable resolution when a placeholder has no matching value"""
 
-    def test_unresolved_placeholder_left_intact(self, mock_file_system):
+    def test_unresolved_placeholder_left_intact(self, mock_file_system: tuple[Any, Any]) -> None:
         """
         As a workflow orchestrator
         I need unresolved placeholders left as [VAR_NAME] in the prompt
