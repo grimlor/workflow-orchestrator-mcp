@@ -3,24 +3,41 @@ MCP Server for Workflow Orchestrator
 
 Provides tools for orchestrating AI workflows defined in markdown
 with natural language, tool specifications, assertions, and variable flow.
+
+Also exposes MCP resources so that agents can browse the workflow-format
+specification, a starter template, and example workflows.
 """
 
 import asyncio
 import logging
+from pathlib import Path
 from typing import Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import Resource, TextContent, Tool
+from pydantic import AnyUrl
 
 from .common import ActionableError
 from .tools.workflow_tools import (
     execute_workflow_step,
     get_workflow_state,
+    get_workflow_template,
     load_workflow,
     report_step_result,
     reset_workflow,
 )
+
+# ---------------------------------------------------------------------------
+# Path constants
+# ---------------------------------------------------------------------------
+_PACKAGE_ROOT = Path(__file__).resolve().parent
+# Template ships inside the package so it survives pip/uvx install
+_WORKFLOW_TEMPLATE_PATH = _PACKAGE_ROOT / "resources" / "workflow_template.md"
+# Docs and demos are repo-level only (not in the wheel)
+_DOCS_DIR = _PACKAGE_ROOT.parent.parent / "docs"
+_WORKFLOW_FORMAT_PATH = _DOCS_DIR / "WORKFLOW_FORMAT.md"
+_DEMO_DIR = _DOCS_DIR / "demo workflows"
 
 # Set up logging
 logger = logging.getLogger("workflow-orchestrator-mcp")
@@ -146,6 +163,30 @@ TOOLS = [
             "required": []
         }
     ),
+    Tool(
+        name="get_workflow_template",
+        description=(
+            "Get the workflow-format specification, a starter skeleton, and a "
+            "concrete example so you can author a new orchestration workflow. "
+            "Call this tool whenever you need to create or understand a workflow "
+            "markdown file. Optionally provide a task_description to include "
+            "context about what the workflow should accomplish."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "task_description": {
+                    "type": "string",
+                    "description": (
+                        "Optional brief description of what the workflow should "
+                        "accomplish. When provided, it is included in the response "
+                        "so you can tailor the template to the task."
+                    )
+                }
+            },
+            "required": []
+        }
+    ),
 ]
 
 
@@ -181,6 +222,11 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             result = get_workflow_state()
         elif name == "reset_workflow":
             result = reset_workflow()
+        elif name == "get_workflow_template":
+            result = get_workflow_template(
+                template_path=_WORKFLOW_TEMPLATE_PATH,
+                task_description=arguments.get("task_description"),
+            )
         else:
             raise ValueError(f"Unknown tool: {name}")
 
@@ -206,6 +252,77 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             "error_type": "unexpected",
         }
         return [TextContent(type="text", text=str(error_response))]
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _read_docs_file(path: Path) -> str:
+    """Read a docs file from disk. Raises FileNotFoundError if missing."""
+    return path.read_text(encoding="utf-8")
+
+
+def _discover_demo_workflows() -> dict[str, Path]:
+    """Return {stem: path} for every .md file in the demo workflows dir."""
+    if _DEMO_DIR.is_dir():
+        return {p.stem: p for p in sorted(_DEMO_DIR.glob("*.md"))}
+    return {}
+
+
+# ---------------------------------------------------------------------------
+# MCP Resources – expose repo-level docs and demo workflows for browsing
+# (These are available in repo-checkout mode only; after pip/uvx install the
+# template is still accessible via the get_workflow_template tool.)
+# ---------------------------------------------------------------------------
+
+@app.list_resources()  # type: ignore[no-untyped-call, untyped-decorator]
+async def list_resources() -> list[Resource]:
+    """List docs and demo workflow files as resources (repo-checkout only)."""
+    resources: list[Resource] = []
+
+    # Format spec (repo-level docs)
+    if _WORKFLOW_FORMAT_PATH.is_file():
+        resources.append(
+            Resource(
+                uri=AnyUrl("workflow://docs/WORKFLOW_FORMAT.md"),
+                name="Workflow Format Specification",
+                description="Complete specification for authoring orchestration workflows",
+                mimeType="text/markdown",
+            )
+        )
+
+    # Demo workflows discovered on disk
+    for stem, _path in _discover_demo_workflows().items():
+        resources.append(
+            Resource(
+                uri=AnyUrl(f"workflow://demos/{stem}.md"),
+                name=stem.replace("_", " ").title(),
+                description=f"Demo workflow: {stem.replace('_', ' ')}",
+                mimeType="text/markdown",
+            )
+        )
+
+    return resources
+
+
+@app.read_resource()  # type: ignore[no-untyped-call, untyped-decorator]
+async def read_resource(uri: str) -> str:
+    """Return the content of a workflow doc or demo file."""
+    uri_str = str(uri)
+
+    if uri_str == "workflow://docs/WORKFLOW_FORMAT.md":
+        return _read_docs_file(_WORKFLOW_FORMAT_PATH)
+
+    if uri_str.startswith("workflow://demos/"):
+        filename = uri_str.removeprefix("workflow://demos/")
+        stem = filename.removesuffix(".md")
+        demos = _discover_demo_workflows()
+        if stem in demos:
+            return demos[stem].read_text(encoding="utf-8")
+        raise ValueError(f"Demo workflow not found: {filename}")
+
+    raise ValueError(f"Unknown resource URI: {uri_str}")
 
 
 async def main() -> None:

@@ -7,8 +7,10 @@ Provides the core functions exposed as MCP tools:
 - report_step_result: Callback for LLM to report step outcomes
 - get_workflow_state: Get current workflow state
 - reset_workflow: Reset workflow to beginning
+- get_workflow_template: Return format spec, skeleton, and example
 """
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..common import ActionableError, AssertionResult, StepOutcome, StepStatus
@@ -224,3 +226,51 @@ def reset_workflow() -> Dict[str, Any]:
         "current_step": state.current_step,
         "total_steps": state.total_steps,
     }
+
+
+def get_workflow_template(
+    template_path: Path,
+    task_description: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Return the workflow-format specification, a starter skeleton, and a
+    concrete example so the agent can author a new workflow.
+
+    The template content is read from a resource file on disk
+    (``docs/workflow_template.md``).
+
+    Args:
+        template_path: Absolute path to the template markdown file.
+        task_description: Optional brief description of what the workflow
+            should accomplish. Included in the response when provided.
+
+    Returns:
+        Dictionary with the template text and optional task context.
+
+    Raises:
+        ActionableError: If the template file cannot be found.
+    """
+    try:
+        template_text = template_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raise ActionableError(
+            f"Workflow template file not found: {template_path}",
+            suggestion=(
+                "The docs/workflow_template.md file is missing. "
+                "Re-install the package or restore the file from the repository."
+            ),
+        )
+
+    result: Dict[str, Any] = {
+        "success": True,
+        "template": template_text,
+    }
+
+    if task_description:
+        result["task_description"] = task_description
+        result["guidance"] = (
+            f"The user wants a workflow that: {task_description}. "
+            "Use the template above to create a complete workflow markdown file."
+        )
+
+    return result
