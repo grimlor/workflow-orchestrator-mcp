@@ -30,11 +30,11 @@ The key difference is the **feedback loop**. Where demo-assistant delivers promp
 
 ### Server (`server.py`)
 
-The MCP server entry point. Registers five tools with the MCP protocol and routes calls to the appropriate tool functions. Handles error responses by catching `ActionableError` exceptions and returning structured error text.
+The MCP server entry point. Registers six tools and one resource with the MCP protocol and routes calls to the appropriate tool functions. Handles error responses by catching `ActionableError` exceptions and returning structured error text.
 
 ### Tools (`tools/workflow_tools.py`)
 
-The five MCP tools exposed to the LLM:
+The six MCP tools exposed to the LLM:
 
 | Tool | Description |
 |------|-------------|
@@ -43,6 +43,7 @@ The five MCP tools exposed to the LLM:
 | `report_step_result` | **Callback tool** — LLM reports step outcomes. Records pass/fail, merges output variables, returns next step or completion. |
 | `get_workflow_state` | Return current workflow progress: completed/failed/pending steps, variables, assertion results. |
 | `reset_workflow` | Reset to beginning while keeping the workflow loaded. |
+| `get_workflow_template` | Return the workflow format spec, skeleton, and a concrete example. |
 
 ### Common Modules
 
@@ -78,9 +79,9 @@ Composes enriched prompts from `WorkflowStep` fields:
 3. Embeds tool names, assertion criteria, and output extraction instructions
 4. Includes `report_step_result` callback instructions with expected schema
 
-#### `error_handling.py`
+#### `errors.py`
 
-Extends the demo-assistant-mcp error pattern with workflow-specific error types:
+Extends the [actionable-errors](https://github.com/grimlor/actionable-errors) library with workflow-specific error types:
 
 | Error Type | When |
 |-----------|------|

@@ -23,7 +23,7 @@ uv sync --all-extras
 ### Running Quality Checks
 
 ```bash
-uv run task test                 # Run tests (77 BDD specs)
+uv run task test                 # Run tests (109 BDD specs)
 uv run task cov                  # Run tests with coverage
 uv run task lint                 # Lint (with auto-fix)
 uv run task format               # Format code
@@ -37,10 +37,12 @@ All checks must pass before submitting a pull request.
 
 ## Code Style
 
-- **Linting**: [Ruff](https://docs.astral.sh/ruff/) with rules E, F, I, N, W enabled
-- **Line length**: 120 characters max
+- **Linting**: [Ruff](https://docs.astral.sh/ruff/) with rules E, W, F, I, N, UP, B, SIM, TCH, RUF, PLC0415, PLC2701
+- **Line length**: 99 characters max
 - **Type hints**: Required on all functions — mypy runs in strict mode
+- **`from __future__ import annotations`**: Required in every Python file
 - **Naming**: Follow PEP 8 conventions
+- **Assertions**: Every `assert` must include a diagnostic message — bare assertions are prohibited
 
 ## Project Structure
 
@@ -65,16 +67,7 @@ This project follows **Behavior-Driven Development (BDD)** rigorously. Tests are
 
 #### 1. Test Who/What/Why, Not How
 
-Specifications describe **behavioral contracts**, not implementation details. Every test uses the format:
-
-```python
-def test_<what_happens>_<under_condition>(self):
-    """
-    As a <who>
-    I need <what>
-    So that <why>
-    """
-```
+Specifications describe **behavioral contracts**, not implementation details.
 
 | Don't | Do |
 |-------|-----|
@@ -102,30 +95,49 @@ Specifications exercise **only public APIs**. Private/internal functions (`_meth
 
 ### Test Organization
 
-Tests are organized by **scenario groups** — each file covers a specific behavioral concern:
+Tests are organized by **consumer requirement** — each class covers a specific behavioral concern:
 
 - Place tests in `tests/` with the `test_` prefix
-- Group related tests in classes named `Test<ScenarioBehavior>`
+- Group related tests in classes named `Test<RequirementBehavior>`
 - Use fixtures from `tests/conftest.py` where possible
 - Add workflow fixture files to `tests/fixtures/` as needed
 - Test both happy paths and error cases
 
+### Three-Part Contract
+
+Every test requires all three:
+
+1. **Class-level docstring** — REQUIREMENT / WHO / WHAT / WHY / MOCK BOUNDARY
+2. **Method-level docstring** — Given / When / Then scenario
+3. **Body comments** — `# Given:`, `# When:`, `# Then:` delineating the three phases
+
 ### Example
 
 ```python
-"""
-Scenario Group 5: Feedback Loop (report_step_result)
-"""
-
 class TestLLMReportsSuccessfulStepOutcome:
-    """Scenario 5.1: LLM reports successful step outcome"""
+    """
+    REQUIREMENT: Step outcomes are recorded accurately when the LLM
+    reports success.
+
+    WHO: The workflow orchestrator tracking execution progress
+    WHAT: When report_step_result is called with status="passed",
+          the step is recorded as PASSED with all outputs captured
+    WHY: Accurate progress tracking enables variable flow to
+         downstream steps and correct workflow completion detection
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system (pathlib.Path — I/O boundary)
+        Real:  report_step_result, get_state, workflow state management
+        Never: Construct StepOutcome directly — always via report_step_result
+    """
 
     def test_step_recorded_as_passed(self, in_progress_workflow):
         """
-        As a workflow orchestrator
-        I need the step recorded as passed when the LLM reports success
-        So that workflow progress is tracked accurately
+        When the LLM reports step 0 as passed with output variables
+        Then the step status is PASSED and outputs are captured
         """
+        # Given: a workflow in progress (from fixture)
+        # When: reporting success for step 0
         report_step_result(
             step_number=0,
             status="passed",
@@ -133,8 +145,11 @@ class TestLLMReportsSuccessfulStepOutcome:
             output_variables={"REPO_NAME": "test-repo"},
         )
 
+        # Then: step is recorded as passed
         state = get_state()
-        assert state.step_outcomes[0].status == StepStatus.PASSED
+        assert state.step_outcomes[0].status == StepStatus.PASSED, (
+            f"Expected PASSED, got {state.step_outcomes[0].status}"
+        )
 ```
 
 ## Pull Request Process
