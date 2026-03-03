@@ -29,14 +29,30 @@ def in_progress_workflow(mock_file_system: tuple[Any, Any]) -> WorkflowState:
 
 
 class TestLLMReportsSuccessfulStepOutcome:
-    """Scenario 5.1: LLM reports successful step outcome"""
+    """
+    REQUIREMENT: The orchestrator records step success and advances the workflow.
+
+    WHO: The workflow orchestrator processing LLM step reports
+    WHAT: A step reported as passed is recorded with PASSED status;
+          the response includes the next step's enriched prompt
+    WHY: Accurate progress tracking is required so the LLM can continue
+         the workflow without extra round-trips
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, report_step_result, get_state, StepStatus
+        Never: Construct StepOutcome directly — always obtain via report_step_result
+    """
 
     def test_step_recorded_as_passed(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need the step recorded as passed when the LLM reports success
-        So that workflow progress is tracked accurately
+        Given a workflow with step 0 in progress
+        When the LLM reports step 0 as passed with all assertions passing
+        Then the step outcome status is recorded as PASSED
         """
+        # Given: step 0 is in progress (via in_progress_workflow fixture)
+
+        # When: the LLM reports success with passing assertions
         report_step_result(
             step_number=0,
             status="passed",
@@ -47,15 +63,21 @@ class TestLLMReportsSuccessfulStepOutcome:
             output_variables={"REPO_NAME": "test-repo"},
         )
 
+        # Then: step 0 is recorded as PASSED
         state = get_state()
-        assert state.step_outcomes[0].status == StepStatus.PASSED
+        assert state.step_outcomes[0].status == StepStatus.PASSED, (
+            f"Expected step 0 status to be PASSED, got {state.step_outcomes[0].status}"
+        )
 
     def test_returns_next_step_prompt(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need the next step's enriched prompt returned after a successful report
-        So that the LLM can continue the workflow without extra round-trips
+        Given a workflow with step 0 in progress
+        When the LLM reports step 0 as passed
+        Then the result includes the next step's enriched prompt
         """
+        # Given: step 0 is in progress (via in_progress_workflow fixture)
+
+        # When: the LLM reports success
         result = report_step_result(
             step_number=0,
             status="passed",
@@ -66,68 +88,117 @@ class TestLLMReportsSuccessfulStepOutcome:
             output_variables={"REPO_NAME": "my-repo"},
         )
 
-        # Should include the next step's enriched prompt
-        assert "prompt" in result or "next_step" in result
+        # Then: the result contains a prompt or next_step key for the next step
+        assert "prompt" in result or "next_step" in result, (
+            f"Expected 'prompt' or 'next_step' in result keys, got {list(result.keys())}"
+        )
 
 
 class TestLLMReportsFailedStepOutcome:
-    """Scenario 5.2: LLM reports failed step outcome"""
+    """
+    REQUIREMENT: The orchestrator records step failure and halts the workflow.
+
+    WHO: The workflow orchestrator processing LLM failure reports
+    WHAT: A step reported as failed is recorded with FAILED status;
+          the workflow is marked as failed; the result includes a
+          failure summary
+    WHY: Failed steps must halt the workflow so the LLM can explain
+         the issue and remaining steps are not attempted
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, report_step_result, get_state, StepStatus
+        Never: Construct StepOutcome directly — always obtain via report_step_result
+    """
 
     def test_step_marked_failed(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need the step marked failed when the LLM reports failure
-        So that the workflow knows execution cannot proceed
+        Given a workflow with step 0 in progress
+        When the LLM reports step 0 as failed with an error message
+        Then the step outcome status is recorded as FAILED
         """
+        # Given: step 0 is in progress (via in_progress_workflow fixture)
+
+        # When: the LLM reports failure
         report_step_result(
             step_number=0,
             status="failed",
             error_message="Tool returned HTTP 500",
         )
 
+        # Then: step 0 is recorded as FAILED
         state = get_state()
-        assert state.step_outcomes[0].status == StepStatus.FAILED
+        assert state.step_outcomes[0].status == StepStatus.FAILED, (
+            f"Expected step 0 status to be FAILED, got {state.step_outcomes[0].status}"
+        )
 
     def test_subsequent_steps_skipped(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need remaining steps marked as skipped after a failure
-        So that the report accurately shows what wasn't attempted
+        Given a workflow with step 0 in progress
+        When the LLM reports step 0 as failed
+        Then the workflow is marked as failed
         """
+        # Given: step 0 is in progress (via in_progress_workflow fixture)
+
+        # When: the LLM reports failure
         report_step_result(
             step_number=0,
             status="failed",
             error_message="Tool returned HTTP 500",
         )
 
+        # Then: the workflow is marked as failed
         state = get_state()
-        assert state.is_failed is True
+        assert state.is_failed is True, (
+            f"Expected workflow is_failed to be True, got {state.is_failed}"
+        )
 
     def test_returns_failure_summary(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need a failure summary returned when a step fails
-        So that the LLM can explain the issue to the user
+        Given a workflow with step 0 in progress
+        When the LLM reports step 0 as failed
+        Then the result includes a failure summary
         """
+        # Given: step 0 is in progress (via in_progress_workflow fixture)
+
+        # When: the LLM reports failure
         result = report_step_result(
             step_number=0,
             status="failed",
             error_message="Tool returned HTTP 500",
         )
 
-        assert result.get("success") is False or "failed" in str(result).lower()
+        # Then: the result indicates failure
+        assert result.get("success") is False or "failed" in str(result).lower(), (
+            f"Expected failure indicator in result, got {result}"
+        )
 
 
 class TestLLMReportsPartialAssertionResults:
-    """Scenario 5.3: LLM reports partial assertion results"""
+    """
+    REQUIREMENT: The orchestrator flags partial assertion results.
+
+    WHO: The workflow orchestrator validating assertion completeness
+    WHAT: When the LLM reports fewer assertions than expected, a warning
+          about the mismatch is included in the result
+    WHY: Unverified assertions must be visible in the report so that
+         incomplete validation does not silently pass
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, report_step_result, get_state
+        Never: Construct StepOutcome directly — always obtain via report_step_result
+    """
 
     def test_mismatch_flagged(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need a warning when the LLM reports fewer assertions than expected
-        So that unverified assertions are visible in the report
+        Given a step with 2 expected assertions
+        When the LLM reports only 1 assertion result
+        Then the result contains a warning about the mismatch
         """
-        # Step 0 has 2 assertions but only 1 is reported
+        # Given: step 0 has 2 assertions but only 1 will be reported
+
+        # When: the LLM reports with fewer assertions than expected
         result = report_step_result(
             step_number=0,
             status="passed",
@@ -137,20 +208,38 @@ class TestLLMReportsPartialAssertionResults:
             output_variables={"REPO_NAME": "test-repo"},
         )
 
-        # Should contain a warning about the mismatch
+        # Then: the result contains a warning about the assertion mismatch
         result_str = str(result).lower()
-        assert "mismatch" in result_str or "warning" in result_str or "unverified" in result_str
+        assert "mismatch" in result_str or "warning" in result_str or "unverified" in result_str, (
+            f"Expected 'mismatch', 'warning', or 'unverified' in result, got {result}"
+        )
 
 
 class TestOutputVariablesMergedOnSuccess:
-    """Scenario 5.4: Output variables merged into state on success"""
+    """
+    REQUIREMENT: Output variables are merged into state only on step success.
+
+    WHO: The workflow orchestrator managing variable state across steps
+    WHAT: Output variables are available in state after a passed step;
+          output variables are NOT merged when a step fails
+    WHY: The next step's prompt depends on resolved variable values, and
+         failed-step outputs must not pollute the variable namespace
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, report_step_result, get_state
+        Never: Mutate state.variables directly — always go through report_step_result
+    """
 
     def test_variables_available_after_success(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need output variables merged into state when a step passes
-        So that the next step's prompt can include resolved values
+        Given a workflow with step 0 in progress
+        When the LLM reports step 0 as passed with output variables
+        Then the output variables are merged into the workflow state
         """
+        # Given: step 0 is in progress (via in_progress_workflow fixture)
+
+        # When: the LLM reports success with output variables
         report_step_result(
             step_number=0,
             status="passed",
@@ -161,15 +250,22 @@ class TestOutputVariablesMergedOnSuccess:
             output_variables={"REPO_NAME": "merged-repo"},
         )
 
+        # Then: REPO_NAME is available in the workflow state
         state = get_state()
-        assert state.variables["REPO_NAME"] == "merged-repo"
+        assert state.variables["REPO_NAME"] == "merged-repo", (
+            f"Expected REPO_NAME='merged-repo' in state variables, "
+            f"got {state.variables.get('REPO_NAME', '<missing>')}"
+        )
 
     def test_variables_not_merged_on_failure(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need output variables NOT merged when a step fails
-        So that failed-step outputs don't pollute the variable namespace
+        Given a workflow with step 0 in progress
+        When the LLM reports step 0 as failed with output variables
+        Then the output variables are NOT merged into the workflow state
         """
+        # Given: step 0 is in progress (via in_progress_workflow fixture)
+
+        # When: the LLM reports failure with output variables
         report_step_result(
             step_number=0,
             status="failed",
@@ -184,20 +280,39 @@ class TestOutputVariablesMergedOnSuccess:
             error_message="Assertion failed",
         )
 
+        # Then: REPO_NAME is not present in the workflow state
         state = get_state()
-        assert "REPO_NAME" not in state.variables
+        assert "REPO_NAME" not in state.variables, (
+            f"Expected REPO_NAME to not be in state variables after failure, "
+            f"but found REPO_NAME='{state.variables.get('REPO_NAME')}'"
+        )
 
 
 class TestReportStepResultOutOfOrder:
-    """Scenario 5.5: report_step_result called out of order"""
+    """
+    REQUIREMENT: The orchestrator rejects out-of-order step reports.
+
+    WHO: The workflow orchestrator enforcing step sequencing
+    WHAT: Reporting a result for a step other than the current in-progress
+          step raises a WorkflowError with a descriptive message
+    WHY: Step results must match the correct step to prevent state
+         corruption and ensure deterministic workflow execution
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, report_step_result, WorkflowError
+        Never: Construct StepOutcome directly — always obtain via report_step_result
+    """
 
     def test_raises_error_for_wrong_step(self, in_progress_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need an error when the LLM reports for the wrong step
-        So that step results are always matched to the correct step
+        Given a workflow with step 0 in progress
+        When the LLM reports a result for step 2
+        Then a WorkflowError is raised with a descriptive message
         """
-        # Step 0 is in progress, but LLM reports for step 2
+        # Given: step 0 is in progress (via in_progress_workflow fixture)
+
+        # When: the LLM reports for step 2 instead of step 0
         with pytest.raises(WorkflowError) as exc_info:
             report_step_result(
                 step_number=2,
@@ -205,5 +320,9 @@ class TestReportStepResultOutOfOrder:
                 assertion_results=[],
             )
 
+        # Then: the error message references step ordering
         error_msg = str(exc_info.value).lower()
-        assert "order" in error_msg or "expected" in error_msg or "step" in error_msg
+        assert "order" in error_msg or "expected" in error_msg or "step" in error_msg, (
+            f"Expected error message to mention 'order', 'expected', or 'step', "
+            f"got: {exc_info.value}"
+        )

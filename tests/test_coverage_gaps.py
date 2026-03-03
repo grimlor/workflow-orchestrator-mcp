@@ -1,8 +1,8 @@
 """
 Coverage gap specifications
 
-Tests for behaviors that weren't covered by the original 7 scenario groups.
-Each test specifies a behavioral contract for an edge case or alternate path.
+Tests for edge cases and alternate paths not covered by the primary scenario groups.
+Each class specifies a behavioral contract for a specific boundary condition.
 """
 
 from __future__ import annotations
@@ -31,39 +31,66 @@ from workflow_orchestrator_mcp.tools.workflow_tools import (
 
 
 class TestNoWorkflowLoadedGuard:
-    """Behaviors when operating on state before any workflow is loaded"""
+    """
+    REQUIREMENT: Operations on workflow state before loading produce actionable errors.
+
+    WHO: The workflow user invoking tools before loading a workflow
+    WHAT: get_workflow_state, reset_workflow, and require_loaded_workflow all
+          raise WorkflowError with a message that names the action needed
+          ("load_workflow") when no workflow is loaded
+    WHY: Silent failures or generic exceptions leave the user guessing —
+         the error must tell them exactly what to do next
+
+    MOCK BOUNDARY:
+        Mock: nothing — these tests exercise guard logic with no I/O
+        Real:  workflow_tools functions, require_loaded_workflow guard
+        Never: Pre-populate global state — the point is that state is empty
+    """
 
     def test_get_workflow_state_raises_when_nothing_loaded(self) -> None:
         """
-        As a workflow user
-        I need a clear error when querying state before loading
-        So that I know to load a workflow first
+        When get_workflow_state is called before any workflow is loaded
+        Then a WorkflowError is raised mentioning "no workflow has been loaded"
         """
+        # Given: no workflow has been loaded (clean state)
+
+        # When: get_workflow_state is called
         with pytest.raises(WorkflowError) as exc_info:
             get_workflow_state()
 
-        assert "no workflow has been loaded" in str(exc_info.value).lower()
+        # Then: the error message mentions no workflow loaded
+        assert "no workflow has been loaded" in str(exc_info.value).lower(), (
+            f"Expected 'no workflow has been loaded' in error, got: {exc_info.value}"
+        )
 
     def test_reset_workflow_raises_when_nothing_loaded(self) -> None:
         """
-        As a workflow user
-        I need a clear error when resetting before loading
-        So that I know there's nothing to reset
+        When reset_workflow is called before any workflow is loaded
+        Then a WorkflowError is raised mentioning "no workflow has been loaded"
         """
+        # Given: no workflow has been loaded (clean state)
+
+        # When: reset_workflow is called
         with pytest.raises(WorkflowError) as exc_info:
             reset_workflow()
 
-        assert "no workflow has been loaded" in str(exc_info.value).lower()
+        # Then: the error message mentions no workflow loaded
+        assert "no workflow has been loaded" in str(exc_info.value).lower(), (
+            f"Expected 'no workflow has been loaded' in error, got: {exc_info.value}"
+        )
 
     def test_require_loaded_workflow_raises_actionable_error(self) -> None:
         """
-        As a workflow orchestrator
-        I need the guard function to raise with load instructions
-        So that any tool can delegate the check
+        When require_loaded_workflow is called with no workflow loaded
+        Then a WorkflowError is raised whose suggestion mentions "load_workflow"
         """
+        # Given: no workflow has been loaded (clean state)
+
+        # When: the guard function is called
         with pytest.raises(WorkflowError) as exc_info:
             require_loaded_workflow()
 
+        # Then: the suggestion mentions load_workflow
         err = exc_info.value
         assert "load_workflow" in (err.suggestion or "").lower(), (
             f"Expected suggestion to mention 'load_workflow'. "
@@ -72,18 +99,32 @@ class TestNoWorkflowLoadedGuard:
 
 
 class TestExecuteWorkflowStepGuards:
-    """Edge cases for execute_workflow_step when workflow is in terminal state"""
+    """
+    REQUIREMENT: execute_workflow_step rejects calls when the workflow is in a terminal state.
+
+    WHO: The workflow user attempting to execute steps after completion or failure
+    WHAT: Calling execute_workflow_step when the workflow is complete raises
+          a WorkflowError mentioning "complete"; calling it when the workflow
+          has failed raises a WorkflowError mentioning "failed"
+    WHY: Executing steps in a terminal state would produce undefined behavior —
+         the error must tell the user to reset before retrying
+
+    MOCK BOUNDARY:
+        Mock:  filesystem via mock_file_system fixture (pathlib.Path I/O)
+        Real:  WorkflowState, workflow_tools functions
+        Never: Set is_complete or is_failed directly — always reach terminal state via execution
+    """
 
     def test_raises_when_workflow_is_complete(self, mock_file_system: tuple[Any, Any]) -> None:
         """
-        As a workflow user
-        I need an error when all steps are already done
-        So that I know to reset if I want to run again
+        Given a workflow where all steps have been executed and passed
+        When execute_workflow_step is called again
+        Then a WorkflowError is raised mentioning "complete"
         """
+        # Given: a workflow where all steps have passed
         load_workflow("/path/to/workflow.md")
         state = get_state()
 
-        # Run through all 3 steps
         for i in range(3):
             execute_workflow_step()
             outputs = {"REPO_NAME": "r"} if i == 0 else ({"PR_ID": "1"} if i == 2 else {})
@@ -97,19 +138,26 @@ class TestExecuteWorkflowStepGuards:
                 output_variables=outputs,
             )
 
-        assert state.is_complete
+        assert state.is_complete, (
+            f"Expected workflow to be complete after all steps, got is_complete={state.is_complete}"
+        )
 
+        # When: execute_workflow_step is called again
         with pytest.raises(WorkflowError) as exc_info:
             execute_workflow_step()
 
-        assert "complete" in str(exc_info.value).lower()
+        # Then: the error mentions "complete"
+        assert "complete" in str(exc_info.value).lower(), (
+            f"Expected 'complete' in error message, got: {exc_info.value}"
+        )
 
     def test_raises_when_workflow_has_failed(self, mock_file_system: tuple[Any, Any]) -> None:
         """
-        As a workflow user
-        I need an error when the workflow has already failed
-        So that I know to reset or fix the issue
+        Given a workflow where a step has failed
+        When execute_workflow_step is called again
+        Then a WorkflowError is raised mentioning "failed"
         """
+        # Given: a workflow where step 1 has failed
         load_workflow("/path/to/workflow.md")
 
         execute_workflow_step()
@@ -120,23 +168,43 @@ class TestExecuteWorkflowStepGuards:
         )
 
         state = get_state()
-        assert state.is_failed
+        assert state.is_failed, (
+            f"Expected workflow to be failed after step failure, got is_failed={state.is_failed}"
+        )
 
+        # When: execute_workflow_step is called again
         with pytest.raises(WorkflowError) as exc_info:
             execute_workflow_step()
 
-        assert "failed" in str(exc_info.value).lower()
+        # Then: the error mentions "failed"
+        assert "failed" in str(exc_info.value).lower(), (
+            f"Expected 'failed' in error message, got: {exc_info.value}"
+        )
 
 
 class TestStepOutcomeAllAssertionsPassed:
-    """Specification for StepOutcome.all_assertions_passed property"""
+    """
+    REQUIREMENT: StepOutcome.all_assertions_passed accurately reflects assertion results.
+
+    WHO: The workflow orchestrator making pass/fail decisions
+    WHAT: Returns True when all assertions passed, False when any failed,
+          and True (vacuously) when no assertions exist
+    WHY: An incorrect all_assertions_passed value would cause the orchestrator
+         to misclassify step outcomes, silently passing failures or failing successes
+
+    MOCK BOUNDARY:
+        Mock: nothing — this class tests pure computation
+        Real:  StepOutcome, AssertionResult dataclasses
+        Never: Mock all_assertions_passed — it is the subject under test
+    """
 
     def test_true_when_all_pass(self) -> None:
         """
-        As a workflow orchestrator
-        I need to know when all assertions in an outcome passed
-        So that I can make pass/fail decisions
+        Given a step outcome where all assertions passed
+        When all_assertions_passed is checked
+        Then it returns True
         """
+        # Given: a step outcome with all assertions passed
         outcome = StepOutcome(
             step_number=0,
             status=StepStatus.PASSED,
@@ -145,14 +213,19 @@ class TestStepOutcomeAllAssertionsPassed:
                 AssertionResult(assertion="b > 0", passed=True),
             ],
         )
-        assert outcome.all_assertions_passed is True
+
+        # When/Then: all_assertions_passed is True
+        assert outcome.all_assertions_passed is True, (
+            f"Expected all_assertions_passed=True when all pass, got {outcome.all_assertions_passed}"
+        )
 
     def test_false_when_any_fails(self) -> None:
         """
-        As a workflow orchestrator
-        I need to detect when any assertion failed
-        So that the step can be marked accordingly
+        Given a step outcome where one assertion failed
+        When all_assertions_passed is checked
+        Then it returns False
         """
+        # Given: a step outcome with one failed assertion
         outcome = StepOutcome(
             step_number=0,
             status=StepStatus.FAILED,
@@ -161,46 +234,76 @@ class TestStepOutcomeAllAssertionsPassed:
                 AssertionResult(assertion="b > 0", passed=False, detail="was 0"),
             ],
         )
-        assert outcome.all_assertions_passed is False
+
+        # When/Then: all_assertions_passed is False
+        assert outcome.all_assertions_passed is False, (
+            f"Expected all_assertions_passed=False when any fails, got {outcome.all_assertions_passed}"
+        )
 
     def test_true_when_no_assertions(self) -> None:
         """
-        As a workflow orchestrator
-        I need steps without assertions to vacuously pass
-        So that assertion-free steps aren't incorrectly flagged
+        Given a step outcome with no assertions
+        When all_assertions_passed is checked
+        Then it returns True (vacuously)
         """
+        # Given: a step outcome with no assertions
         outcome = StepOutcome(
             step_number=0,
             status=StepStatus.PASSED,
             assertion_results=[],
         )
-        assert outcome.all_assertions_passed is True
+
+        # When/Then: all_assertions_passed is vacuously True
+        assert outcome.all_assertions_passed is True, (
+            f"Expected all_assertions_passed=True for empty assertions (vacuous truth), "
+            f"got {outcome.all_assertions_passed}"
+        )
 
 
 class TestParserEdgeCases:
-    """Parsing edge cases not covered by Group 1 scenarios"""
+    """
+    REQUIREMENT: The parser handles filesystem errors and alternate syntax gracefully.
+
+    WHO: The workflow author encountering file access issues or using alternate syntax
+    WHAT: A file read error (permissions, encoding) raises a WorkflowError
+          mentioning "failed to read"; ASCII arrow (->) in OUTPUTS is accepted
+          alongside the Unicode arrow (→)
+    WHY: Unhandled I/O exceptions crash the server; rejecting ASCII arrows
+         forces authors to use special characters unnecessarily
+
+    MOCK BOUNDARY:
+        Mock:  filesystem via patch (pathlib.Path.exists, pathlib.Path.read_text)
+        Real:  workflow parser, WorkflowError construction
+        Never: Bypass the parser — always trigger via load_workflow
+    """
 
     def test_file_read_error_raises_actionable_error(self) -> None:
         """
-        As a workflow author
-        I need a clear error when the file can't be read (permissions, encoding)
-        So that I can fix the access issue
+        Given a file path that exists but cannot be read (e.g., permissions)
+        When the workflow is loaded
+        Then a WorkflowError is raised mentioning "failed to read"
         """
+        # Given: a file that exists but raises PermissionError on read
         with (
             patch("pathlib.Path.exists", return_value=True),
             patch("pathlib.Path.read_text", side_effect=PermissionError("Permission denied")),
         ):
+            # When: the workflow is loaded
             with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/path/to/unreadable.md")
 
-            assert "failed to read" in str(exc_info.value).lower()
+            # Then: the error mentions failed to read
+            assert "failed to read" in str(exc_info.value).lower(), (
+                f"Expected 'failed to read' in error message, got: {exc_info.value}"
+            )
 
     def test_ascii_arrow_in_outputs(self) -> None:
         """
-        As a workflow author
-        I need -> (ASCII arrow) to work in OUTPUTS alongside →
-        So that I can write workflows without special characters
+        Given a workflow using ASCII arrow (->) in OUTPUTS instead of Unicode (→)
+        When the workflow is loaded
+        Then the output variable mapping is parsed correctly
         """
+        # Given: a workflow with ASCII arrow syntax
         workflow_with_ascii_arrow = """# ASCII Arrow Workflow
 
 ### 🔧 WORKFLOW STEP: Extract data
@@ -222,28 +325,49 @@ Run extraction tool
         ):
             load_workflow("/path/to/ascii.md")
 
+        # When: the parsed state is inspected
         state = get_state()
         step = state.steps[0]
-        assert "ENTITY_ID" in step.outputs.values()
-        assert "result.id" in step.outputs
+
+        # Then: the output variable mapping is correct
+        assert "ENTITY_ID" in step.outputs.values(), (
+            f"Expected 'ENTITY_ID' in output values, got: {list(step.outputs.values())}"
+        )
+        assert "result.id" in step.outputs, (
+            f"Expected 'result.id' in output keys, got: {list(step.outputs.keys())}"
+        )
 
 
 class TestExecuteWorkflowStepDefensiveGuard:
-    """Defensive behavior when get_current_step returns None unexpectedly"""
+    """
+    REQUIREMENT: A safety net catches the impossible case where get_current_step
+                 returns None after guards pass.
+
+    WHO: The workflow orchestrator runtime
+    WHAT: If get_current_step() returns None despite is_complete and is_failed
+          both being False, a WorkflowError is raised mentioning "no more steps"
+    WHY: This defensive guard prevents a NoneType crash in production if
+         state invariants are violated by a future code change
+
+    MOCK BOUNDARY:
+        Mock:  filesystem via mock_file_system fixture (pathlib.Path I/O);
+               get_current_step, is_complete, is_failed patched to simulate impossible state
+        Real:  execute_workflow_step guard logic
+        Never: Skip the guard — it is the subject under test
+    """
 
     def test_step_none_after_guards_pass_raises_actionable_error(
         self, mock_file_system: tuple[Any, Any]
     ) -> None:
         """
-        As a workflow orchestrator
-        I need a safety net if get_current_step() returns None despite guards passing
-        So that the user gets a helpful error instead of a crash
+        Given a workflow where get_current_step returns None despite guards passing
+        When execute_workflow_step is called
+        Then a WorkflowError is raised mentioning "no more steps"
         """
+        # Given: a loaded workflow with patched state to simulate impossible condition
         load_workflow("/path/to/workflow.md")
         state = get_state()
-        # Force current_step to an invalid index that bypasses is_complete
-        # by also setting a failed outcome so is_complete returns False
-        # Actually, let's mock get_current_step directly
+
         with (
             patch.object(state, "get_current_step", return_value=None),
             patch.object(
@@ -252,26 +376,50 @@ class TestExecuteWorkflowStepDefensiveGuard:
             patch.object(
                 type(state), "is_failed", new_callable=lambda: property(lambda self: False)
             ),
+            # When: execute_workflow_step is called
             pytest.raises(WorkflowError) as exc_info,
         ):
             execute_workflow_step()
 
-        assert "no more steps" in exc_info.value.error.lower()
+        # Then: the error mentions "no more steps"
+        assert "no more steps" in exc_info.value.error.lower(), (
+            f"Expected 'no more steps' in error, got: {exc_info.value.error}"
+        )
 
 
 class TestUnresolvedVariablePlaceholder:
-    """Variable resolution when a placeholder has no matching value"""
+    """
+    REQUIREMENT: Unresolved variable placeholders are left intact in the prompt.
+
+    WHO: The workflow orchestrator building prompts for the LLM
+    WHAT: When a placeholder like [VAR_NAME] has no matching value in the
+          variables dict, it is left as-is in the resolved string;
+          resolved placeholders are replaced with their values
+    WHY: Leaving unresolved placeholders visible lets the LLM report
+         what's missing instead of silently dropping the reference
+
+    MOCK BOUNDARY:
+        Mock:  filesystem via mock_file_system fixture (pathlib.Path I/O)
+        Real:  _resolve_variables function (pure string transformation)
+        Never: Mock the regex — the substitution logic is the subject under test
+    """
 
     def test_unresolved_placeholder_left_intact(self, mock_file_system: tuple[Any, Any]) -> None:
         """
-        As a workflow orchestrator
-        I need unresolved placeholders left as [VAR_NAME] in the prompt
-        So that the LLM sees them and can report what's missing
+        Given a prompt with two placeholders where only one has a value
+        When _resolve_variables is called
+        Then the resolved placeholder is replaced and the unresolved one remains
         """
+        # Given: a prompt with [SERVER_NAME] (resolved) and [PORT] (unresolved)
         result = _resolve_variables(
             "Connect to [SERVER_NAME] on port [PORT]",
             {"SERVER_NAME": "prod-db"},
         )
 
-        assert "prod-db" in result
-        assert "[PORT]" in result  # Unresolved — left intact
+        # Then: resolved placeholder is replaced, unresolved is left intact
+        assert "prod-db" in result, (
+            f"Expected resolved placeholder 'prod-db' in result, got: {result}"
+        )
+        assert "[PORT]" in result, (
+            f"Expected unresolved placeholder '[PORT]' to remain intact, got: {result}"
+        )

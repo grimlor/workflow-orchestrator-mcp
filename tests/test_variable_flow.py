@@ -44,15 +44,30 @@ def _advance_step(
 
 
 class TestLLMReportsOutputVariables:
-    """Scenario 4.1: LLM reports output variables via callback"""
+    """
+    REQUIREMENT: Output variables reported by the LLM are persisted in workflow state.
+
+    WHO: The workflow orchestrator storing step outputs for downstream consumption
+    WHAT: When report_step_result includes output_variables, those variables
+          appear in WorkflowState.variables with the reported values
+    WHY: Subsequent steps depend on earlier outputs; if variables are not
+         persisted, downstream substitution silently produces empty prompts
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, report_step_result, execute_workflow_step
+        Never: Mutate state.variables directly — always go through report_step_result
+    """
 
     def test_output_variable_stored_in_state(self, loaded_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need output variables from the LLM stored in state
-        So that subsequent steps can use them
+        When report_step_result is called with an output variable
+        Then the variable is stored in workflow state with the reported value
         """
+        # Given: step 0 has been executed
         execute_workflow_step()
+
+        # When: the step result is reported with an output variable
         report_step_result(
             step_number=0,
             status="passed",
@@ -63,64 +78,119 @@ class TestLLMReportsOutputVariables:
             output_variables={"REPO_NAME": "my-awesome-repo"},
         )
 
+        # Then: the variable is persisted in state
         state = get_state()
-        assert "REPO_NAME" in state.variables
-        assert state.variables["REPO_NAME"] == "my-awesome-repo"
+        assert "REPO_NAME" in state.variables, (
+            f"Expected REPO_NAME in state.variables, got keys: {list(state.variables.keys())}"
+        )
+        assert state.variables["REPO_NAME"] == "my-awesome-repo", (
+            f"Expected REPO_NAME='my-awesome-repo', got '{state.variables.get('REPO_NAME')}'"
+        )
 
 
 class TestSubstituteVariableInNextStep:
-    """Scenario 4.2: Substitute variable in next step's enriched prompt"""
+    """
+    REQUIREMENT: Variables from earlier steps are substituted into subsequent step prompts.
+
+    WHO: The prompt builder resolving placeholders before sending to the LLM
+    WHAT: When step 1 produces REPO_NAME, step 2's enriched prompt contains
+          the concrete value and no longer contains the [REPO_NAME] placeholder
+    WHY: The LLM must receive concrete values, not variable placeholders,
+         to produce meaningful tool calls and responses
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, execute_workflow_step, report_step_result
+        Never: Construct prompt strings directly — always obtain via execute_workflow_step
+    """
 
     def test_repo_name_substituted_in_step2_prompt(self, loaded_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need variables from step 1 substituted into step 2's prompt
-        So that the LLM works with concrete values, not placeholders
+        Given step 1 has been completed with REPO_NAME output
+        When step 2's prompt is built via execute_workflow_step
+        Then the prompt contains the concrete value and no placeholder
         """
-        # Complete step 1, producing REPO_NAME
+        # Given: step 1 completed, producing REPO_NAME
         _advance_step(loaded_workflow, 0, outputs={"REPO_NAME": "my-repo"})
 
-        # Now step 2's prompt should have REPO_NAME resolved
+        # When: step 2's prompt is built
         result = execute_workflow_step()
 
+        # Then: the prompt contains the substituted value, not the placeholder
         prompt = result["prompt"]
-        assert "my-repo" in prompt
-        assert "[REPO_NAME]" not in prompt
+        assert "my-repo" in prompt, (
+            f"Expected 'my-repo' in prompt, got: {prompt[:200]}"
+        )
+        assert "[REPO_NAME]" not in prompt, (
+            f"Placeholder [REPO_NAME] should be resolved but still present in: {prompt[:200]}"
+        )
 
 
 class TestVariableSubstitutionInDescription:
-    """Scenario 4.3: Variable substitution in step description"""
+    """
+    REQUIREMENT: Variable placeholders in step descriptions are replaced with actual values.
+
+    WHO: The prompt builder rendering step descriptions for the LLM
+    WHAT: When a step description contains [REPO_NAME] and the variable
+          has been set by a prior step, the enriched prompt shows the
+          concrete value instead of the placeholder
+    WHY: Unresolved placeholders in descriptions confuse the LLM and
+         produce incorrect tool calls against literal bracket strings
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, execute_workflow_step, report_step_result
+        Never: Construct prompt strings directly — always obtain via execute_workflow_step
+    """
 
     def test_description_shows_substituted_value(self, loaded_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need [VARIABLE_NAME] in descriptions replaced with actual values
-        So that the LLM sees the concrete context
+        Given step 1 has been completed with REPO_NAME output
+        When step 2's prompt is built (its description contains [REPO_NAME])
+        Then the prompt contains the concrete value
         """
-        # Step 2 description contains "[REPO_NAME]"
+        # Given: step 1 completed, producing REPO_NAME
         _advance_step(loaded_workflow, 0, outputs={"REPO_NAME": "test-repo"})
 
+        # When: step 2's prompt is built
         result = execute_workflow_step()
 
+        # Then: the description shows the substituted value
         prompt = result["prompt"]
-        assert "test-repo" in prompt
+        assert "test-repo" in prompt, (
+            f"Expected 'test-repo' in prompt after substitution, got: {prompt[:200]}"
+        )
 
 
 class TestMissingRequiredInputVariable:
-    """Scenario 4.4: Missing required input variable"""
+    """
+    REQUIREMENT: Missing required input variables produce a clear error.
+
+    WHO: The workflow orchestrator validating variable availability before prompt build
+    WHAT: When a step requires [REPO_NAME] but it was never produced by a prior
+          step, report_step_result raises a WorkflowError that names the
+          missing variable
+    WHY: Silent substitution of empty values produces broken prompts;
+         an explicit error lets the workflow author fix the dependency chain
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, execute_workflow_step, report_step_result
+        Never: Bypass variable validation by mutating state directly
+    """
 
     def test_raises_error_when_input_variable_missing(
         self, loaded_workflow: WorkflowState
     ) -> None:
         """
-        As a workflow orchestrator
-        I need an error when a required input variable isn't available
-        So that the workflow fails clearly instead of using stale/empty data
+        Given step 1 completes without producing REPO_NAME
+        When report_step_result triggers the next step's prompt build
+        Then a WorkflowError is raised that names the missing variable
         """
-        # Complete step 1 WITHOUT producing REPO_NAME
+        # Given: step 1 executed but does not produce REPO_NAME
         execute_workflow_step()
 
-        # report_step_result auto-builds next step prompt, which triggers missing var
+        # When: report_step_result triggers prompt build for next step
         with pytest.raises(WorkflowError) as exc_info:
             report_step_result(
                 step_number=0,
@@ -132,30 +202,45 @@ class TestMissingRequiredInputVariable:
                 output_variables={},  # No REPO_NAME!
             )
 
-        assert "REPO_NAME" in str(exc_info.value)
+        # Then: the error names the missing variable
+        assert "REPO_NAME" in str(exc_info.value), (
+            f"Error should name the missing variable REPO_NAME. Got: {exc_info.value}"
+        )
 
 
 class TestChainOutputsThroughMultipleSteps:
-    """Scenario 4.5: Chain outputs through multiple steps"""
+    """
+    REQUIREMENT: Variables chain through multiple sequential steps.
+
+    WHO: The workflow orchestrator accumulating variables across the full pipeline
+    WHAT: A variable produced in step 1 remains available through step 2 and
+          step 3; each step can add new variables without losing earlier ones
+    WHY: Multi-step workflows depend on cumulative context; if earlier
+         variables are lost, downstream steps cannot reference prior results
+
+    MOCK BOUNDARY:
+        Mock:  mock_file_system fixture (filesystem I/O)
+        Real:  WorkflowState, execute_workflow_step, report_step_result
+        Never: Mutate state.variables directly — always go through report_step_result
+    """
 
     def test_variables_flow_through_chain(self, loaded_workflow: WorkflowState) -> None:
         """
-        As a workflow orchestrator
-        I need variables to chain through step 1 → step 2 → step 3
-        So that each step builds on previous results
+        Given step 1 produces REPO_NAME and step 2 completes without new outputs
+        When step 3 executes and produces PR_ID
+        Then both REPO_NAME and PR_ID are present in state variables
         """
-        # Step 1 → produces REPO_NAME
+        # Given: step 1 produces REPO_NAME, step 2 passes through
         _advance_step(loaded_workflow, 0, outputs={"REPO_NAME": "chained-repo"})
-
-        # Step 2 → uses REPO_NAME, produces nothing new for this test
         _advance_step(loaded_workflow, 1, outputs={})
 
-        # Step 3 → should still have REPO_NAME available, and produce PR_ID
+        # When: step 3 executes and produces PR_ID
         result = execute_workflow_step()
-        # Step 3's prompt should be buildable (no missing variable errors)
-        assert "prompt" in result
+        assert "prompt" in result, (
+            f"Step 3 prompt should be buildable (no missing variable errors). "
+            f"Got keys: {list(result.keys())}"
+        )
 
-        # Complete step 3 → produces PR_ID
         report_step_result(
             step_number=2,
             status="passed",
@@ -166,6 +251,11 @@ class TestChainOutputsThroughMultipleSteps:
             output_variables={"PR_ID": "42"},
         )
 
+        # Then: both variables are present in state
         state = get_state()
-        assert state.variables["REPO_NAME"] == "chained-repo"
-        assert state.variables["PR_ID"] == "42"
+        assert state.variables["REPO_NAME"] == "chained-repo", (
+            f"Expected REPO_NAME='chained-repo', got '{state.variables.get('REPO_NAME')}'"
+        )
+        assert state.variables["PR_ID"] == "42", (
+            f"Expected PR_ID='42', got '{state.variables.get('PR_ID')}'"
+        )
