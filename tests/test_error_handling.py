@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from workflow_orchestrator_mcp.common.error_handling import ActionableError
+from workflow_orchestrator_mcp.common.errors import WorkflowError
 from workflow_orchestrator_mcp.common.workflow_state import get_state
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
@@ -36,7 +36,7 @@ Step with empty name
 """
         with patch("pathlib.Path.exists", return_value=True), \
              patch("pathlib.Path.read_text", return_value=malformed):
-            with pytest.raises(ActionableError) as exc_info:
+            with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/path/to/malformed.md")
 
             error = str(exc_info.value)
@@ -51,7 +51,7 @@ Step with empty name
         """
         with patch("pathlib.Path.exists", return_value=True), \
              patch("pathlib.Path.read_text", return_value=workflow_without_tools):
-            with pytest.raises(ActionableError) as exc_info:
+            with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/path/to/bad.md")
 
             error = str(exc_info.value)

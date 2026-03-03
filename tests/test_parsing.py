@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from workflow_orchestrator_mcp.common.error_handling import ActionableError
+from workflow_orchestrator_mcp.common.errors import WorkflowError
 from workflow_orchestrator_mcp.tools.workflow_tools import load_workflow
 
 
@@ -149,7 +149,7 @@ class TestRejectWorkflowWithoutToolSpecifications:
         """
         with patch("pathlib.Path.exists", return_value=True), \
              patch("pathlib.Path.read_text", return_value=workflow_without_tools):
-            with pytest.raises(ActionableError) as exc_info:
+            with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/path/to/bad_workflow.md")
 
             assert "tool" in str(exc_info.value).lower()
@@ -162,7 +162,7 @@ class TestRejectWorkflowWithoutToolSpecifications:
         """
         with patch("pathlib.Path.exists", return_value=True), \
              patch("pathlib.Path.read_text", return_value=empty_workflow_markdown):
-            with pytest.raises(ActionableError):
+            with pytest.raises(WorkflowError):
                 load_workflow("/path/to/empty.md")
 
     def test_raises_actionable_error_for_missing_file(self) -> None:
@@ -172,7 +172,7 @@ class TestRejectWorkflowWithoutToolSpecifications:
         So that I can correct the path
         """
         with patch("pathlib.Path.exists", return_value=False):
-            with pytest.raises(ActionableError) as exc_info:
+            with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/nonexistent/path.md")
 
             assert "not found" in str(exc_info.value).lower()

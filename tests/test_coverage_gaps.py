@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from workflow_orchestrator_mcp.common.error_handling import ActionableError
+from workflow_orchestrator_mcp.common.errors import WorkflowError
 from workflow_orchestrator_mcp.common.workflow_state import (
     AssertionResult,
     StepOutcome,
@@ -36,7 +36,7 @@ class TestNoWorkflowLoadedGuard:
         I need a clear error when querying state before loading
         So that I know to load a workflow first
         """
-        with pytest.raises(ActionableError) as exc_info:
+        with pytest.raises(WorkflowError) as exc_info:
             get_workflow_state()
 
         assert "no workflow has been loaded" in str(exc_info.value).lower()
@@ -47,7 +47,7 @@ class TestNoWorkflowLoadedGuard:
         I need a clear error when resetting before loading
         So that I know there's nothing to reset
         """
-        with pytest.raises(ActionableError) as exc_info:
+        with pytest.raises(WorkflowError) as exc_info:
             reset_workflow()
 
         assert "no workflow has been loaded" in str(exc_info.value).lower()
@@ -58,10 +58,14 @@ class TestNoWorkflowLoadedGuard:
         I need the guard function to raise with load instructions
         So that any tool can delegate the check
         """
-        with pytest.raises(ActionableError) as exc_info:
+        with pytest.raises(WorkflowError) as exc_info:
             require_loaded_workflow()
 
-        assert "load_workflow" in str(exc_info.value).lower()
+        err = exc_info.value
+        assert "load_workflow" in (err.suggestion or "").lower(), (
+            f"Expected suggestion to mention 'load_workflow'. "
+            f"Got error='{err.error}', suggestion='{err.suggestion}'"
+        )
 
 
 class TestExecuteWorkflowStepGuards:
@@ -92,7 +96,7 @@ class TestExecuteWorkflowStepGuards:
 
         assert state.is_complete
 
-        with pytest.raises(ActionableError) as exc_info:
+        with pytest.raises(WorkflowError) as exc_info:
             execute_workflow_step()
 
         assert "complete" in str(exc_info.value).lower()
@@ -115,7 +119,7 @@ class TestExecuteWorkflowStepGuards:
         state = get_state()
         assert state.is_failed
 
-        with pytest.raises(ActionableError) as exc_info:
+        with pytest.raises(WorkflowError) as exc_info:
             execute_workflow_step()
 
         assert "failed" in str(exc_info.value).lower()
@@ -181,7 +185,7 @@ class TestParserEdgeCases:
         """
         with patch("pathlib.Path.exists", return_value=True), \
              patch("pathlib.Path.read_text", side_effect=PermissionError("Permission denied")):
-            with pytest.raises(ActionableError) as exc_info:
+            with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/path/to/unreadable.md")
 
             assert "failed to read" in str(exc_info.value).lower()
@@ -234,10 +238,10 @@ class TestExecuteWorkflowStepDefensiveGuard:
         with patch.object(state, "get_current_step", return_value=None), \
              patch.object(type(state), "is_complete", new_callable=lambda: property(lambda self: False)), \
              patch.object(type(state), "is_failed", new_callable=lambda: property(lambda self: False)):
-            with pytest.raises(ActionableError) as exc_info:
+            with pytest.raises(WorkflowError) as exc_info:
                 execute_workflow_step()
 
-        assert "no more steps" in exc_info.value.message.lower()
+        assert "no more steps" in exc_info.value.error.lower()
 
 
 class TestUnresolvedVariablePlaceholder:

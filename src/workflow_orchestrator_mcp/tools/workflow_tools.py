@@ -13,7 +13,10 @@ Provides the core functions exposed as MCP tools:
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..common import ActionableError, AssertionResult, StepOutcome, StepStatus
+from actionable_errors import ErrorType
+
+from ..common import AssertionResult, StepOutcome, StepStatus
+from ..common.errors import WorkflowError
 from ..common.prompt_builder import build_enriched_prompt
 from ..common.workflow_parser import parse_workflow_markdown
 from ..common.workflow_state import get_state, require_loaded_workflow
@@ -64,25 +67,31 @@ def execute_workflow_step() -> Dict[str, Any]:
         Dictionary with enriched prompt text and step metadata
 
     Raises:
-        ActionableError: If no workflow loaded or workflow is complete/failed
+        WorkflowError: If no workflow loaded or workflow is complete/failed
     """
     state = require_loaded_workflow()
 
     if state.is_complete:
-        raise ActionableError(
-            "Workflow is already complete",
+        raise WorkflowError(
+            error="Workflow is already complete",
+            error_type=ErrorType.INTERNAL,
+            service="workflow-orchestrator",
             suggestion="Use reset_workflow() to run again",
         )
     if state.is_failed:
-        raise ActionableError(
-            "Workflow has failed — cannot continue",
+        raise WorkflowError(
+            error="Workflow has failed — cannot continue",
+            error_type=ErrorType.INTERNAL,
+            service="workflow-orchestrator",
             suggestion="Use reset_workflow() to restart, or fix the issue and resume",
         )
 
     step = state.get_current_step()
     if step is None:
-        raise ActionableError(
-            "No more steps to execute",
+        raise WorkflowError(
+            error="No more steps to execute",
+            error_type=ErrorType.INTERNAL,
+            service="workflow-orchestrator",
             suggestion="The workflow may be complete — check get_workflow_state()",
         )
 
@@ -120,13 +129,13 @@ def report_step_result(
         Dictionary with next step info or workflow completion status
 
     Raises:
-        ActionableError: If step is out of order or no workflow loaded
+        WorkflowError: If step is out of order or no workflow loaded
     """
     state = require_loaded_workflow()
 
     # Validate step ordering
     if step_number != state.current_step:
-        raise ActionableError.step_out_of_order(step_number, state.current_step)
+        raise WorkflowError.step_out_of_order(step_number, state.current_step)
 
     current_step = state.get_current_step()
     step_status = StepStatus.PASSED if status == "passed" else StepStatus.FAILED
@@ -202,7 +211,7 @@ def get_workflow_state() -> Dict[str, Any]:
         Dictionary with workflow state information
 
     Raises:
-        ActionableError: If no workflow has been loaded
+        WorkflowError: If no workflow has been loaded
     """
     state = require_loaded_workflow()
     return state.to_dict()
@@ -216,7 +225,7 @@ def reset_workflow() -> Dict[str, Any]:
         Dictionary with reset confirmation
 
     Raises:
-        ActionableError: If no workflow has been loaded
+        WorkflowError: If no workflow has been loaded
     """
     state = require_loaded_workflow()
     state.reset()
@@ -248,13 +257,15 @@ def get_workflow_template(
         Dictionary with the template text and optional task context.
 
     Raises:
-        ActionableError: If the template file cannot be found.
+        WorkflowError: If the template file cannot be found.
     """
     try:
         template_text = template_path.read_text(encoding="utf-8")
     except FileNotFoundError:
-        raise ActionableError(
-            f"Workflow template file not found: {template_path}",
+        raise WorkflowError(
+            error=f"Workflow template file not found: {template_path}",
+            error_type=ErrorType.NOT_FOUND,
+            service="workflow-orchestrator",
             suggestion=(
                 "The docs/workflow_template.md file is missing. "
                 "Re-install the package or restore the file from the repository."

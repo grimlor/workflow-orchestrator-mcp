@@ -16,7 +16,9 @@ import re
 from pathlib import Path
 from typing import Dict, List
 
-from .error_handling import ActionableError
+from actionable_errors import ErrorType
+
+from .errors import WorkflowError
 from .workflow_state import WorkflowStep
 
 
@@ -36,20 +38,22 @@ def parse_workflow_markdown(file_path: str) -> List[WorkflowStep]:
     path = Path(file_path)
 
     if not path.exists():
-        raise ActionableError.file_not_found(file_path)
+        raise WorkflowError.file_not_found(file_path)
 
     try:
         content = path.read_text(encoding="utf-8")
     except Exception as e:
-        raise ActionableError(
-            f"Failed to read workflow file: {e}",
+        raise WorkflowError(
+            error=f"Failed to read workflow file: {e}",
+            error_type=ErrorType.INTERNAL,
+            service="workflow-orchestrator",
             suggestion="Ensure the file is readable and properly encoded",
         )
 
     steps = _extract_steps(content, file_path)
 
     if not steps:
-        raise ActionableError.empty_workflow(file_path)
+        raise WorkflowError.empty_workflow(file_path)
 
     return steps
 
@@ -112,7 +116,7 @@ def _extract_description(section: str, file_path: str, step_name: str) -> str:
     """Extract the description from the code block following a step header."""
     code_block = re.search(r"```\s*\n(.*?)```", section, re.DOTALL)
     if not code_block:
-        raise ActionableError.invalid_format(
+        raise WorkflowError.invalid_format(
             file_path, f"step '{step_name}' is missing a description code block"
         )
     return code_block.group(1).strip()
@@ -143,7 +147,7 @@ def _extract_tools(section: str, file_path: str, step_name: str) -> List[str]:
             return [tool_name]
 
     # No tool specification found — this is an error
-    raise ActionableError.missing_tool_spec(step_name)
+    raise WorkflowError.missing_tool_spec(step_name)
 
 
 def _extract_inputs(section: str) -> Dict[str, str]:

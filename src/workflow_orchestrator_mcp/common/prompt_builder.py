@@ -8,7 +8,7 @@ resolved variables, assertion criteria, and callback instructions.
 import re
 from typing import Any, Dict, List
 
-from .error_handling import ActionableError
+from .errors import WorkflowError
 from .workflow_state import WorkflowStep
 
 
@@ -33,7 +33,7 @@ def build_enriched_prompt(
         Enriched prompt text for the LLM
 
     Raises:
-        ActionableError: If a required input variable is missing
+        WorkflowError: If a required input variable is missing
     """
     # Validate required inputs are available
     _validate_inputs(step, variables)
@@ -102,10 +102,10 @@ def build_enriched_prompt(
 
 
 def _validate_inputs(step: WorkflowStep, variables: Dict[str, Any]) -> None:
-    """Raise ActionableError if a required input variable is missing."""
+    """Raise WorkflowError if a required input variable is missing."""
     for var_name in step.inputs:
         if var_name not in variables:
-            raise ActionableError.variable_missing(var_name, step.name)
+            raise WorkflowError.variable_missing(var_name, step.name)
 
 
 def _resolve_variables(text: str, variables: Dict[str, Any]) -> str:

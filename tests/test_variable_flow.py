@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from workflow_orchestrator_mcp.common.error_handling import ActionableError
+from workflow_orchestrator_mcp.common.errors import WorkflowError
 from workflow_orchestrator_mcp.common.workflow_state import WorkflowState, get_state
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
@@ -116,7 +116,7 @@ class TestMissingRequiredInputVariable:
         execute_workflow_step()
 
         # report_step_result auto-builds next step prompt, which triggers missing var
-        with pytest.raises(ActionableError) as exc_info:
+        with pytest.raises(WorkflowError) as exc_info:
             report_step_result(
                 step_number=0,
                 status="passed",

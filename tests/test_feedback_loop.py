@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from workflow_orchestrator_mcp.common.error_handling import ActionableError
+from workflow_orchestrator_mcp.common.errors import WorkflowError
 from workflow_orchestrator_mcp.common.workflow_state import StepStatus, WorkflowState, get_state
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
@@ -192,7 +192,7 @@ class TestReportStepResultOutOfOrder:
         So that step results are always matched to the correct step
         """
         # Step 0 is in progress, but LLM reports for step 2
-        with pytest.raises(ActionableError) as exc_info:
+        with pytest.raises(WorkflowError) as exc_info:
             report_step_result(
                 step_number=2,
                 status="passed",

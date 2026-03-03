@@ -157,9 +157,9 @@ def require_loaded_workflow() -> WorkflowState:
     Raises:
         ActionableError: If no workflow has been loaded
     """
-    from .error_handling import ActionableError
+    from .errors import WorkflowError
 
     state = get_state()
     if not state.is_loaded:
-        raise ActionableError.no_workflow_loaded("proceed with operation")
+        raise WorkflowError.no_workflow_loaded("proceed with operation")
     return state
