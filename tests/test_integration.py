@@ -24,7 +24,7 @@ from workflow_orchestrator_mcp.server import mcp
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 
 EXPECTED_DOCS_URL = (
-    "https://github.com/grimlor/workflow-orchestrator-mcp/tree/master/docs"
+    "https://github.com/grimlor/workflow-orchestrator-mcp/tree/main/docs"
 )
 
 

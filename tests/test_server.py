@@ -559,7 +559,7 @@ class TestDocsResource:
     """
 
     EXPECTED_URL = (
-        "https://github.com/grimlor/workflow-orchestrator-mcp/tree/master/docs"
+        "https://github.com/grimlor/workflow-orchestrator-mcp/tree/main/docs"
     )
 
     def test_get_docs_link_returns_github_url(self) -> None:

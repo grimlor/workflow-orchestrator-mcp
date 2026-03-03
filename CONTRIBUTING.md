@@ -139,7 +139,7 @@ class TestLLMReportsSuccessfulStepOutcome:
 
 ## Pull Request Process
 
-1. **Fork** the repository and create a feature branch from `master`
+1. **Fork** the repository and create a feature branch from `main`
 2. **Make your changes** with clear, focused commits
 3. **Run all checks** — tests, ruff, mypy must pass
 4. **Submit a PR** with a clear description of what and why

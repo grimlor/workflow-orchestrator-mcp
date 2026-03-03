@@ -119,7 +119,7 @@ empty string and logs a warning.
 ci(release): add python-semantic-release workflow
 
 Automates version bumping and GitHub Release creation on push to
-master. Reads conventional commit history since the last tag and
+main. Reads conventional commit history since the last tag and
 determines the appropriate semver increment.
 ```
 

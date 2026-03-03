@@ -136,7 +136,7 @@ async def get_workflow_template(task_description: str | None = None) -> str:
 @mcp.resource("workflow://docs")
 def get_docs_link() -> str:
     """Return the GitHub docs URL for the workflow orchestrator."""
-    return "https://github.com/grimlor/workflow-orchestrator-mcp/tree/master/docs"
+    return "https://github.com/grimlor/workflow-orchestrator-mcp/tree/main/docs"
 
 
 # ---------------------------------------------------------------------------
