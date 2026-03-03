@@ -5,6 +5,7 @@ Tests the public APIs: report_step_result() (output capture) and
 execute_workflow_step() (variable substitution in prompts).
 """
 
+from __future__ import annotations
 
 from typing import Any
 
@@ -26,7 +27,9 @@ def loaded_workflow(mock_file_system: tuple[Any, Any]) -> WorkflowState:
     return get_state()
 
 
-def _advance_step(state: WorkflowState, step_number: int, outputs: dict[str, str] | None = None) -> None:
+def _advance_step(
+    state: WorkflowState, step_number: int, outputs: dict[str, str] | None = None
+) -> None:
     """Helper: simulate executing and reporting a step via public API"""
     execute_workflow_step()
     report_step_result(
@@ -106,7 +109,9 @@ class TestVariableSubstitutionInDescription:
 class TestMissingRequiredInputVariable:
     """Scenario 4.4: Missing required input variable"""
 
-    def test_raises_error_when_input_variable_missing(self, loaded_workflow: WorkflowState) -> None:
+    def test_raises_error_when_input_variable_missing(
+        self, loaded_workflow: WorkflowState
+    ) -> None:
         """
         As a workflow orchestrator
         I need an error when a required input variable isn't available

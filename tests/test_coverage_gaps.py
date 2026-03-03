@@ -5,12 +5,15 @@ Tests for behaviors that weren't covered by the original 7 scenario groups.
 Each test specifies a behavioral contract for an edge case or alternate path.
 """
 
+from __future__ import annotations
+
 from typing import Any
 from unittest.mock import patch
 
 import pytest
 
 from workflow_orchestrator_mcp.common.errors import WorkflowError
+from workflow_orchestrator_mcp.common.prompt_builder import _resolve_variables  # noqa: PLC2701
 from workflow_orchestrator_mcp.common.workflow_state import (
     AssertionResult,
     StepOutcome,
@@ -183,8 +186,10 @@ class TestParserEdgeCases:
         I need a clear error when the file can't be read (permissions, encoding)
         So that I can fix the access issue
         """
-        with patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.read_text", side_effect=PermissionError("Permission denied")):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", side_effect=PermissionError("Permission denied")),
+        ):
             with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/path/to/unreadable.md")
 
@@ -211,20 +216,24 @@ Run extraction tool
 ### ✅ ASSERT:
 - result.id exists
 """
-        with patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.read_text", return_value=workflow_with_ascii_arrow):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value=workflow_with_ascii_arrow),
+        ):
             load_workflow("/path/to/ascii.md")
 
         state = get_state()
         step = state.steps[0]
         assert "ENTITY_ID" in step.outputs.values()
-        assert "result.id" in step.outputs.keys()
+        assert "result.id" in step.outputs
 
 
 class TestExecuteWorkflowStepDefensiveGuard:
     """Defensive behavior when get_current_step returns None unexpectedly"""
 
-    def test_step_none_after_guards_pass_raises_actionable_error(self, mock_file_system: tuple[Any, Any]) -> None:
+    def test_step_none_after_guards_pass_raises_actionable_error(
+        self, mock_file_system: tuple[Any, Any]
+    ) -> None:
         """
         As a workflow orchestrator
         I need a safety net if get_current_step() returns None despite guards passing
@@ -235,11 +244,17 @@ class TestExecuteWorkflowStepDefensiveGuard:
         # Force current_step to an invalid index that bypasses is_complete
         # by also setting a failed outcome so is_complete returns False
         # Actually, let's mock get_current_step directly
-        with patch.object(state, "get_current_step", return_value=None), \
-             patch.object(type(state), "is_complete", new_callable=lambda: property(lambda self: False)), \
-             patch.object(type(state), "is_failed", new_callable=lambda: property(lambda self: False)):
-            with pytest.raises(WorkflowError) as exc_info:
-                execute_workflow_step()
+        with (
+            patch.object(state, "get_current_step", return_value=None),
+            patch.object(
+                type(state), "is_complete", new_callable=lambda: property(lambda self: False)
+            ),
+            patch.object(
+                type(state), "is_failed", new_callable=lambda: property(lambda self: False)
+            ),
+            pytest.raises(WorkflowError) as exc_info,
+        ):
+            execute_workflow_step()
 
         assert "no more steps" in exc_info.value.error.lower()
 
@@ -253,8 +268,6 @@ class TestUnresolvedVariablePlaceholder:
         I need unresolved placeholders left as [VAR_NAME] in the prompt
         So that the LLM sees them and can report what's missing
         """
-        from workflow_orchestrator_mcp.common.prompt_builder import _resolve_variables
-
         result = _resolve_variables(
             "Connect to [SERVER_NAME] on port [PORT]",
             {"SERVER_NAME": "prod-db"},

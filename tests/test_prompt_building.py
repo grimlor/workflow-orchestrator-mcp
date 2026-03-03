@@ -5,12 +5,18 @@ Tests the public API: execute_workflow_step()
 Relies on load_workflow() to populate state, so uses pre-loaded state helper.
 """
 
+from __future__ import annotations
 
 from typing import Any
 
 import pytest
 
-from workflow_orchestrator_mcp.common.workflow_state import WorkflowState, get_state
+from workflow_orchestrator_mcp.common.workflow_state import (
+    StepOutcome,
+    StepStatus,
+    WorkflowState,
+    get_state,
+)
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
     load_workflow,
@@ -72,17 +78,21 @@ class TestBuildEnrichedPromptForMultiTool:
         So that the LLM invokes them in the correct sequence
         """
         # Advance to step 3 (multi-tool step) by recording outcomes for steps 1 & 2
-        from workflow_orchestrator_mcp.common.workflow_state import StepOutcome, StepStatus
-
         state = loaded_workflow
-        state.record_step_outcome(StepOutcome(
-            step_number=0, status=StepStatus.PASSED,
-            output_variables={"REPO_NAME": "my-repo"},
-        ))
+        state.record_step_outcome(
+            StepOutcome(
+                step_number=0,
+                status=StepStatus.PASSED,
+                output_variables={"REPO_NAME": "my-repo"},
+            )
+        )
         state.current_step = 1
-        state.record_step_outcome(StepOutcome(
-            step_number=1, status=StepStatus.PASSED,
-        ))
+        state.record_step_outcome(
+            StepOutcome(
+                step_number=1,
+                status=StepStatus.PASSED,
+            )
+        )
         state.current_step = 2
 
         result = execute_workflow_step()
@@ -104,14 +114,15 @@ class TestIncludeResolvedVariablesInPrompt:
         I need variable placeholders resolved in the prompt
         So that the LLM has concrete values to work with
         """
-        from workflow_orchestrator_mcp.common.workflow_state import StepOutcome, StepStatus
-
         state = loaded_workflow
         # Step 1 produces REPO_NAME
-        state.record_step_outcome(StepOutcome(
-            step_number=0, status=StepStatus.PASSED,
-            output_variables={"REPO_NAME": "my-repo"},
-        ))
+        state.record_step_outcome(
+            StepOutcome(
+                step_number=0,
+                status=StepStatus.PASSED,
+                output_variables={"REPO_NAME": "my-repo"},
+            )
+        )
         state.current_step = 1
 
         result = execute_workflow_step()
@@ -137,7 +148,9 @@ class TestPromptIncludesCallbackInstructions:
         prompt = result["prompt"]
         assert "report_step_result" in prompt
 
-    def test_prompt_specifies_expected_assertion_count(self, loaded_workflow: WorkflowState) -> None:
+    def test_prompt_specifies_expected_assertion_count(
+        self, loaded_workflow: WorkflowState
+    ) -> None:
         """
         As a workflow orchestrator
         I need the prompt to tell the LLM how many assertions to evaluate

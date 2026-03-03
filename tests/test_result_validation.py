@@ -5,6 +5,8 @@ Tests the public API: report_step_result() and its effect on workflow state.
 Assertions are embedded in prompts (Group 2) and results reported back here.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 import pytest
@@ -32,7 +34,9 @@ def in_progress_step(mock_file_system: tuple[Any, Any]) -> WorkflowState:
 class TestAssertionsEmbeddedInPrompt:
     """Scenario 3.1: Assertions embedded in enriched prompt"""
 
-    def test_enriched_prompt_contains_each_assertion(self, mock_file_system: tuple[Any, Any]) -> None:
+    def test_enriched_prompt_contains_each_assertion(
+        self, mock_file_system: tuple[Any, Any]
+    ) -> None:
         """
         As a workflow orchestrator
         I need each assertion embedded in the prompt
@@ -60,8 +64,16 @@ class TestLLMReportsAssertionResults:
             step_number=0,
             status="passed",
             assertion_results=[
-                {"assertion": 'result contains "repositories"', "passed": True, "detail": "Found repositories key"},
-                {"assertion": "result.repositories.length > 0", "passed": True, "detail": "3 repositories found"},
+                {
+                    "assertion": 'result contains "repositories"',
+                    "passed": True,
+                    "detail": "Found repositories key",
+                },
+                {
+                    "assertion": "result.repositories.length > 0",
+                    "passed": True,
+                    "detail": "3 repositories found",
+                },
             ],
             output_variables={"REPO_NAME": "test-repo"},
         )
@@ -105,7 +117,11 @@ class TestStepMarkedFailedOnAssertionFailure:
             status="failed",
             assertion_results=[
                 {"assertion": 'result contains "repositories"', "passed": True, "detail": "Found"},
-                {"assertion": "result.repositories.length > 0", "passed": False, "detail": "Empty array returned"},
+                {
+                    "assertion": "result.repositories.length > 0",
+                    "passed": False,
+                    "detail": "Empty array returned",
+                },
             ],
         )
 
@@ -123,7 +139,11 @@ class TestStepMarkedFailedOnAssertionFailure:
             step_number=0,
             status="failed",
             assertion_results=[
-                {"assertion": "result.repositories.length > 0", "passed": False, "detail": "Empty array returned"},
+                {
+                    "assertion": "result.repositories.length > 0",
+                    "passed": False,
+                    "detail": "Empty array returned",
+                },
             ],
         )
 

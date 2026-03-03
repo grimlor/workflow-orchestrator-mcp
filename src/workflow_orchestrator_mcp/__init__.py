@@ -6,6 +6,8 @@ Extends the demo-assistant-mcp pattern with tool specifications, assertions,
 variable flow, and a feedback loop via report_step_result.
 """
 
+from __future__ import annotations
+
 from .common import ActionableError, WorkflowError, WorkflowErrorType
 from .common.workflow_state import (
     AssertionResult,
@@ -32,19 +34,19 @@ except ImportError:  # editable install or no build
 
 __all__ = [
     "ActionableError",
-    "WorkflowError",
-    "WorkflowErrorType",
-    "WorkflowStep",
-    "WorkflowState",
+    "AssertionResult",
     "StepOutcome",
     "StepStatus",
-    "AssertionResult",
-    "load_workflow",
+    "WorkflowError",
+    "WorkflowErrorType",
+    "WorkflowState",
+    "WorkflowStep",
     "execute_workflow_step",
-    "report_step_result",
+    "get_state",
     "get_workflow_state",
     "get_workflow_template",
-    "reset_workflow",
-    "get_state",
+    "load_workflow",
+    "report_step_result",
     "require_loaded_workflow",
+    "reset_workflow",
 ]

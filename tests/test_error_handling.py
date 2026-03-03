@@ -4,6 +4,8 @@ Scenario Group 7: Error Handling and Reporting
 Tests error handling and the final workflow execution report.
 """
 
+from __future__ import annotations
+
 from typing import Any
 from unittest.mock import patch
 
@@ -34,8 +36,10 @@ class TestActionableErrorForParsingFailure:
 Step with empty name
 ```
 """
-        with patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.read_text", return_value=malformed):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value=malformed),
+        ):
             with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/path/to/malformed.md")
 
@@ -49,8 +53,10 @@ Step with empty name
         I need error messages that suggest the correct format
         So that I can fix my workflow quickly
         """
-        with patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.read_text", return_value=workflow_without_tools):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value=workflow_without_tools),
+        ):
             with pytest.raises(WorkflowError) as exc_info:
                 load_workflow("/path/to/bad.md")
 
@@ -77,7 +83,11 @@ class TestWorkflowExecutionReport:
             status="passed",
             assertion_results=[
                 {"assertion": 'result contains "repositories"', "passed": True, "detail": "Found"},
-                {"assertion": "result.repositories.length > 0", "passed": True, "detail": "3 repos"},
+                {
+                    "assertion": "result.repositories.length > 0",
+                    "passed": True,
+                    "detail": "3 repos",
+                },
             ],
             output_variables={"REPO_NAME": "my-repo"},
         )
@@ -115,8 +125,16 @@ class TestWorkflowExecutionReport:
             step_number=0,
             status="passed",
             assertion_results=[
-                {"assertion": 'result contains "repositories"', "passed": True, "detail": "Found key in response"},
-                {"assertion": "result.repositories.length > 0", "passed": True, "detail": "3 items"},
+                {
+                    "assertion": 'result contains "repositories"',
+                    "passed": True,
+                    "detail": "Found key in response",
+                },
+                {
+                    "assertion": "result.repositories.length > 0",
+                    "passed": True,
+                    "detail": "3 items",
+                },
             ],
             output_variables={"REPO_NAME": "test-repo"},
         )
@@ -132,7 +150,9 @@ class TestWorkflowExecutionReport:
 class TestDetailedFailureDiagnostics:
     """Scenario 7.3: Detailed failure diagnostics"""
 
-    def test_failure_shows_assertion_text_and_detail(self, mock_file_system: tuple[Any, Any]) -> None:
+    def test_failure_shows_assertion_text_and_detail(
+        self, mock_file_system: tuple[Any, Any]
+    ) -> None:
         """
         As a workflow author
         I need the failed assertion text and LLM explanation
@@ -156,8 +176,7 @@ class TestDetailedFailureDiagnostics:
 
         state_dict = get_workflow_state()
         failed_assertions = [
-            a for a in state_dict["step_outcomes"][0]["assertion_results"]
-            if not a["passed"]
+            a for a in state_dict["step_outcomes"][0]["assertion_results"] if not a["passed"]
         ]
 
         assert len(failed_assertions) == 1

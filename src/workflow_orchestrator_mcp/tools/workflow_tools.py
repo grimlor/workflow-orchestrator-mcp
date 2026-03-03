@@ -10,10 +10,14 @@ Provides the core functions exposed as MCP tools:
 - get_workflow_template: Return format spec, skeleton, and example
 """
 
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from actionable_errors import ErrorType
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 from ..common import AssertionResult, StepOutcome, StepStatus
 from ..common.errors import WorkflowError
@@ -22,7 +26,7 @@ from ..common.workflow_parser import parse_workflow_markdown
 from ..common.workflow_state import get_state, require_loaded_workflow
 
 
-def load_workflow(file_path: str) -> Dict[str, Any]:
+def load_workflow(file_path: str) -> dict[str, Any]:
     """
     Load and parse a workflow markdown file.
 
@@ -56,7 +60,7 @@ def load_workflow(file_path: str) -> Dict[str, Any]:
     }
 
 
-def execute_workflow_step() -> Dict[str, Any]:
+def execute_workflow_step() -> dict[str, Any]:
     """
     Build and return the enriched prompt for the current workflow step.
 
@@ -108,10 +112,10 @@ def execute_workflow_step() -> Dict[str, Any]:
 def report_step_result(
     step_number: int,
     status: str,
-    assertion_results: Optional[List[Dict[str, Any]]] = None,
-    output_variables: Optional[Dict[str, Any]] = None,
+    assertion_results: list[dict[str, Any]] | None = None,
+    output_variables: dict[str, Any] | None = None,
     error_message: str = "",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Callback tool: LLM reports execution results back to orchestrator.
 
@@ -141,7 +145,7 @@ def report_step_result(
     step_status = StepStatus.PASSED if status == "passed" else StepStatus.FAILED
 
     # Build assertion result objects
-    parsed_assertions: List[AssertionResult] = []
+    parsed_assertions: list[AssertionResult] = []
     if assertion_results:
         for ar in assertion_results:
             parsed_assertions.append(
@@ -178,7 +182,7 @@ def report_step_result(
         state.current_step += 1
 
         # Build response
-        result: Dict[str, Any] = {"success": True, "step_number": step_number}
+        result: dict[str, Any] = {"success": True, "step_number": step_number}
         if mismatch_warning:
             result["warning"] = mismatch_warning
 
@@ -203,7 +207,7 @@ def report_step_result(
         }
 
 
-def get_workflow_state() -> Dict[str, Any]:
+def get_workflow_state() -> dict[str, Any]:
     """
     Get the current state of the workflow.
 
@@ -217,7 +221,7 @@ def get_workflow_state() -> Dict[str, Any]:
     return state.to_dict()
 
 
-def reset_workflow() -> Dict[str, Any]:
+def reset_workflow() -> dict[str, Any]:
     """
     Reset the workflow to the beginning.
 
@@ -239,8 +243,8 @@ def reset_workflow() -> Dict[str, Any]:
 
 def get_workflow_template(
     template_path: Path,
-    task_description: Optional[str] = None,
-) -> Dict[str, Any]:
+    task_description: str | None = None,
+) -> dict[str, Any]:
     """
     Return the workflow-format specification, a starter skeleton, and a
     concrete example so the agent can author a new workflow.
@@ -270,9 +274,9 @@ def get_workflow_template(
                 "The docs/workflow_template.md file is missing. "
                 "Re-install the package or restore the file from the repository."
             ),
-        )
+        ) from None
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "success": True,
         "template": template_text,
     }

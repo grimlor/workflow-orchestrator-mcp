@@ -1,5 +1,7 @@
 """Common utilities for workflow-orchestrator-mcp"""
 
+from __future__ import annotations
+
 from actionable_errors import ActionableError
 
 from .errors import WorkflowError, WorkflowErrorType
@@ -15,13 +17,13 @@ from .workflow_state import (
 
 __all__ = [
     "ActionableError",
+    "AssertionResult",
+    "StepOutcome",
+    "StepStatus",
     "WorkflowError",
     "WorkflowErrorType",
     "WorkflowState",
     "WorkflowStep",
-    "StepOutcome",
-    "StepStatus",
-    "AssertionResult",
     "get_state",
     "require_loaded_workflow",
 ]

@@ -11,8 +11,13 @@ BDD spec classes:
 - TestPackageReExport: Import paths and __all__ listings
 """
 
+from __future__ import annotations
+
 from actionable_errors import ActionableError
 
+import workflow_orchestrator_mcp.common as common_mod
+from workflow_orchestrator_mcp import ActionableError as PkgActionableError
+from workflow_orchestrator_mcp.common import WorkflowError as CommonWorkflowError
 from workflow_orchestrator_mcp.common.errors import WorkflowError, WorkflowErrorType
 
 # Public API surface (from errors.py — post-adoption):
@@ -74,14 +79,11 @@ class TestErrorTypeExtension:
             "STEP_OUT_OF_ORDER",
             "ASSERTION_MISMATCH",
         }
-        assert domain_names == names, (
-            f"Expected exactly {domain_names}. Got: {names}"
-        )
+        assert domain_names == names, f"Expected exactly {domain_names}. Got: {names}"
 
         # Then: total count is 6
         assert len(members) == 6, (
-            f"Expected 6 domain members, got {len(members)}: "
-            f"{[m.name for m in members]}"
+            f"Expected 6 domain members, got {len(members)}: {[m.name for m in members]}"
         )
 
     def test_domain_values_preserve_string_representation(self) -> None:
@@ -106,8 +108,7 @@ class TestErrorTypeExtension:
 
             # Then: matches the expected value
             assert actual == expected_str, (
-                f"{member.name}: expected string '{expected_str}', "
-                f"got '{actual}'"
+                f"{member.name}: expected string '{expected_str}', got '{actual}'"
             )
 
     def test_domain_values_accepted_by_actionable_error(self) -> None:
@@ -175,9 +176,7 @@ class TestFactoryMethodPreservation:
             f"Expected error_type 'not_found', got '{err.error_type}'"
         )
         # Then: error message mentions the path
-        assert path in err.error, (
-            f"Expected path '{path}' in error message. Got: {err.error}"
-        )
+        assert path in err.error, f"Expected path '{path}' in error message. Got: {err.error}"
         # Then: service is set
         assert err.service == "workflow-orchestrator", (
             f"Expected service 'workflow-orchestrator', got '{err.service}'"
@@ -232,8 +231,7 @@ class TestFactoryMethodPreservation:
         )
         # Then: error message mentions both step numbers
         assert str(reported) in err.error and str(expected) in err.error, (
-            f"Expected both step numbers ({reported}, {expected}) in error. "
-            f"Got: {err.error}"
+            f"Expected both step numbers ({reported}, {expected}) in error. Got: {err.error}"
         )
 
     def test_all_factories_produce_workflow_error_and_actionable_error(self) -> None:
@@ -321,7 +319,6 @@ class TestPackageReExport:
         Then the import succeeds and it is the library's class
         """
         # Given / When: importing from the package
-        from workflow_orchestrator_mcp import ActionableError as PkgActionableError
 
         # Then: it is the library's class (a dataclass with 'error' field)
         assert PkgActionableError is ActionableError, (
@@ -336,7 +333,6 @@ class TestPackageReExport:
         Then the import succeeds and it is a subclass of ActionableError
         """
         # Given / When: importing from common
-        from workflow_orchestrator_mcp.common import WorkflowError as CommonWorkflowError
 
         # Then: it is a subclass of ActionableError
         assert issubclass(CommonWorkflowError, ActionableError), (
@@ -351,7 +347,6 @@ class TestPackageReExport:
         Then both ActionableError and WorkflowError are listed
         """
         # Given / When: inspecting __all__
-        import workflow_orchestrator_mcp.common as common_mod
 
         all_names = getattr(common_mod, "__all__", [])
 

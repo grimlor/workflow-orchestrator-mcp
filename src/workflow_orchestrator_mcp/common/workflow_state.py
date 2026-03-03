@@ -5,13 +5,18 @@ Tracks the current position in a workflow, step outcomes (passed/failed/skipped)
 runtime variables, and assertion results.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
+
+from .errors import WorkflowError
 
 
-class StepStatus(str, Enum):
+class StepStatus(StrEnum):
     """Status of an individual workflow step"""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     PASSED = "passed"
@@ -22,6 +27,7 @@ class StepStatus(str, Enum):
 @dataclass
 class AssertionResult:
     """LLM-reported result for a single assertion"""
+
     assertion: str
     passed: bool
     detail: str = ""
@@ -30,10 +36,11 @@ class AssertionResult:
 @dataclass
 class StepOutcome:
     """Reported by LLM via report_step_result callback"""
+
     step_number: int
     status: StepStatus
-    assertion_results: List[AssertionResult] = field(default_factory=list)
-    output_variables: Dict[str, Any] = field(default_factory=dict)
+    assertion_results: list[AssertionResult] = field(default_factory=list)
+    output_variables: dict[str, Any] = field(default_factory=dict)
     error_message: str = ""
 
     @property
@@ -44,13 +51,14 @@ class StepOutcome:
 @dataclass
 class WorkflowStep:
     """Represents a single step extracted from a workflow script"""
+
     step_number: int
     name: str
     description: str
-    tool_names: List[str] = field(default_factory=list)
-    inputs: Dict[str, str] = field(default_factory=dict)
-    outputs: Dict[str, str] = field(default_factory=dict)
-    assertions: List[str] = field(default_factory=list)
+    tool_names: list[str] = field(default_factory=list)
+    inputs: dict[str, str] = field(default_factory=dict)
+    outputs: dict[str, str] = field(default_factory=dict)
+    assertions: list[str] = field(default_factory=list)
     section_title: str = ""
 
 
@@ -65,21 +73,21 @@ class WorkflowState:
     """
 
     file_path: str = ""
-    steps: List[WorkflowStep] = field(default_factory=list)
+    steps: list[WorkflowStep] = field(default_factory=list)
     current_step: int = 0  # Index in steps list (0-based)
-    variables: Dict[str, Any] = field(default_factory=dict)
-    step_outcomes: Dict[int, StepOutcome] = field(default_factory=dict)
+    variables: dict[str, Any] = field(default_factory=dict)
+    step_outcomes: dict[int, StepOutcome] = field(default_factory=dict)
 
     @property
     def total_steps(self) -> int:
         return len(self.steps)
 
     @property
-    def completed_steps(self) -> List[int]:
+    def completed_steps(self) -> list[int]:
         return [n for n, o in self.step_outcomes.items() if o.status == StepStatus.PASSED]
 
     @property
-    def failed_steps(self) -> List[int]:
+    def failed_steps(self) -> list[int]:
         return [n for n, o in self.step_outcomes.items() if o.status == StepStatus.FAILED]
 
     @property
@@ -106,13 +114,13 @@ class WorkflowState:
         self.variables.clear()
         self.step_outcomes.clear()
 
-    def get_current_step(self) -> Optional[WorkflowStep]:
+    def get_current_step(self) -> WorkflowStep | None:
         """Get the step at the current position"""
         if 0 <= self.current_step < self.total_steps:
             return self.steps[self.current_step]
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert state to dictionary for serialization"""
         return {
             "file_path": self.file_path,
@@ -157,8 +165,6 @@ def require_loaded_workflow() -> WorkflowState:
     Raises:
         ActionableError: If no workflow has been loaded
     """
-    from .errors import WorkflowError
-
     state = get_state()
     if not state.is_loaded:
         raise WorkflowError.no_workflow_loaded("proceed with operation")

@@ -5,6 +5,8 @@ FastMCP-based server that exposes workflow orchestration tools and
 a docs resource over the MCP protocol (stdio transport).
 """
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 from typing import Any

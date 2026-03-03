@@ -4,6 +4,8 @@ Logging configuration for workflow-orchestrator-mcp
 Sets up standard logging to stderr for MCP server operation.
 """
 
+from __future__ import annotations
+
 import logging
 import sys
 
@@ -17,8 +19,7 @@ handler.setLevel(logging.INFO)
 
 # Create formatter
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
 handler.setFormatter(formatter)
 

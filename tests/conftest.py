@@ -1,15 +1,20 @@
 """Shared pytest fixtures for workflow-orchestrator-mcp tests"""
 
-from collections.abc import Generator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from workflow_orchestrator_mcp.common.workflow_state import _workflow_state
+from workflow_orchestrator_mcp.common.workflow_state import _workflow_state  # noqa: PLC2701
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @pytest.fixture(autouse=True)
-def reset_workflow_state() -> Generator[None, None, None]:
+def reset_workflow_state() -> Generator[None]:
     """Reset global workflow state before each test"""
     _workflow_state.file_path = ""
     _workflow_state.steps = []
@@ -120,10 +125,9 @@ This workflow has no executable steps.
 
 
 @pytest.fixture
-def mock_file_system(valid_workflow_markdown: str) -> Generator[tuple[MagicMock, MagicMock], None, None]:
+def mock_file_system(valid_workflow_markdown: str) -> Generator[tuple[MagicMock, MagicMock]]:
     """Mock file system operations"""
-    with patch('pathlib.Path.exists') as mock_exists, \
-         patch('pathlib.Path.read_text') as mock_read:
+    with patch("pathlib.Path.exists") as mock_exists, patch("pathlib.Path.read_text") as mock_read:
         mock_exists.return_value = True
         mock_read.return_value = valid_workflow_markdown
         yield mock_exists, mock_read

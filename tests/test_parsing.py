@@ -5,12 +5,15 @@ Tests the public API: load_workflow()
 Mocks only I/O: file system reads via pathlib.Path
 """
 
+from __future__ import annotations
+
 from typing import Any
 from unittest.mock import patch
 
 import pytest
 
 from workflow_orchestrator_mcp.common.errors import WorkflowError
+from workflow_orchestrator_mcp.common.workflow_state import get_state
 from workflow_orchestrator_mcp.tools.workflow_tools import load_workflow
 
 
@@ -59,8 +62,6 @@ class TestLoadWorkflowWithMultipleTools:
 
         # The third step in valid_workflow_markdown uses TOOLS (plural)
         # We need to check it via load then state
-        from workflow_orchestrator_mcp.common.workflow_state import get_state
-
         state = get_state()
         multi_tool_step = state.steps[2]  # "Create pull request"
         assert len(multi_tool_step.tool_names) == 2
@@ -79,23 +80,21 @@ class TestParseAssertionsFromWorkflow:
         """
         load_workflow("/path/to/workflow.md")
 
-        from workflow_orchestrator_mcp.common.workflow_state import get_state
-
         state = get_state()
         # Step 1 has 2 assertions
         assert len(state.steps[0].assertions) == 2
         assert 'result contains "repositories"' in state.steps[0].assertions
         assert "result.repositories.length > 0" in state.steps[0].assertions
 
-    def test_assertions_associated_with_correct_step(self, mock_file_system: tuple[Any, Any]) -> None:
+    def test_assertions_associated_with_correct_step(
+        self, mock_file_system: tuple[Any, Any]
+    ) -> None:
         """
         As a workflow author
         I need assertions tied to the step they validate
         So that each step has its own success criteria
         """
         load_workflow("/path/to/workflow.md")
-
-        from workflow_orchestrator_mcp.common.workflow_state import get_state
 
         state = get_state()
         # Step 2 has 1 assertion, step 3 has 2
@@ -114,8 +113,6 @@ class TestParseInputOutputSpecifications:
         """
         load_workflow("/path/to/workflow.md")
 
-        from workflow_orchestrator_mcp.common.workflow_state import get_state
-
         state = get_state()
         # Step 2 ("Set repository context") has INPUTS
         step_with_inputs = state.steps[1]
@@ -129,8 +126,6 @@ class TestParseInputOutputSpecifications:
         So that step results can flow to subsequent steps
         """
         load_workflow("/path/to/workflow.md")
-
-        from workflow_orchestrator_mcp.common.workflow_state import get_state
 
         state = get_state()
         # Step 1 has OUTPUT: result.repositories[0].name → REPO_NAME
@@ -147,23 +142,29 @@ class TestRejectWorkflowWithoutToolSpecifications:
         I need clear feedback when I forget TOOL sections
         So that I can fix my workflow format
         """
-        with patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.read_text", return_value=workflow_without_tools):
-            with pytest.raises(WorkflowError) as exc_info:
-                load_workflow("/path/to/bad_workflow.md")
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value=workflow_without_tools),
+            pytest.raises(WorkflowError) as exc_info,
+        ):
+            load_workflow("/path/to/bad_workflow.md")
 
             assert "tool" in str(exc_info.value).lower()
 
-    def test_raises_actionable_error_for_empty_workflow(self, empty_workflow_markdown: str) -> None:
+    def test_raises_actionable_error_for_empty_workflow(
+        self, empty_workflow_markdown: str
+    ) -> None:
         """
         As a workflow author
         I need feedback when no steps are found
         So that I know my file needs workflow step tags
         """
-        with patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.read_text", return_value=empty_workflow_markdown):
-            with pytest.raises(WorkflowError):
-                load_workflow("/path/to/empty.md")
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value=empty_workflow_markdown),
+            pytest.raises(WorkflowError),
+        ):
+            load_workflow("/path/to/empty.md")
 
     def test_raises_actionable_error_for_missing_file(self) -> None:
         """

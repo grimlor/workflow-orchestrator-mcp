@@ -14,9 +14,12 @@ BDD spec classes:
 - TestServerEntry: run() and main() entry points
 """
 
+from __future__ import annotations
+
 import ast
 import inspect
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -56,7 +59,7 @@ class TestToolRegistration:
         Never: FastMCP internals (we don't test their decorator machinery)
     """
 
-    EXPECTED_TOOLS = [
+    EXPECTED_TOOLS: ClassVar[list[str]] = [
         "load_workflow",
         "execute_workflow_step",
         "report_step_result",
@@ -75,15 +78,10 @@ class TestToolRegistration:
         # When / Then: each function exists and is async
         for name in self.EXPECTED_TOOLS:
             fn = getattr(server, name, None)
-            assert fn is not None, (
-                f"server module missing tool function: {name}"
-            )
-            assert callable(fn), (
-                f"server.{name} is not callable"
-            )
+            assert fn is not None, f"server module missing tool function: {name}"
+            assert callable(fn), f"server.{name} is not callable"
             assert inspect.iscoroutinefunction(fn), (
-                f"server.{name} should be an async function, "
-                f"got {type(fn).__name__}"
+                f"server.{name} should be an async function, got {type(fn).__name__}"
             )
 
     def test_load_workflow_requires_file_path_str(self) -> None:
@@ -101,11 +99,10 @@ class TestToolRegistration:
 
         # Then: file_path is required and typed as str
         assert "file_path" in sig.parameters, (
-            f"load_workflow missing 'file_path' param. "
-            f"Params: {list(sig.parameters.keys())}"
+            f"load_workflow missing 'file_path' param. Params: {list(sig.parameters.keys())}"
         )
         param = sig.parameters["file_path"]
-        assert param.annotation is str, (
+        assert param.annotation in (str, "str"), (
             f"file_path should be annotated as str, got {param.annotation}"
         )
         assert param.default is inspect.Parameter.empty, (
@@ -128,15 +125,11 @@ class TestToolRegistration:
         params = sig.parameters
 
         # Then: step_number and status are required
-        assert "step_number" in params, (
-            f"Missing 'step_number'. Params: {list(params.keys())}"
-        )
+        assert "step_number" in params, f"Missing 'step_number'. Params: {list(params.keys())}"
         assert params["step_number"].default is inspect.Parameter.empty, (
             "step_number should be required (no default)"
         )
-        assert "status" in params, (
-            f"Missing 'status'. Params: {list(params.keys())}"
-        )
+        assert "status" in params, f"Missing 'status'. Params: {list(params.keys())}"
         assert params["status"].default is inspect.Parameter.empty, (
             "status should be required (no default)"
         )
@@ -175,16 +168,17 @@ class TestToolRegistration:
 
             # Then: no required params
             required = [
-                name for name, p in sig.parameters.items()
+                name
+                for name, p in sig.parameters.items()
                 if p.default is inspect.Parameter.empty
-                and p.kind not in (
+                and p.kind
+                not in (
                     inspect.Parameter.VAR_POSITIONAL,
                     inspect.Parameter.VAR_KEYWORD,
                 )
             ]
             assert len(required) == 0, (
-                f"server.{tool_name} should have no required params, "
-                f"but requires: {required}"
+                f"server.{tool_name} should have no required params, but requires: {required}"
             )
 
 
@@ -220,9 +214,7 @@ class TestToolExecution:
         result = await server.load_workflow(fixture_path)
 
         # Then: returns a string containing step count info
-        assert isinstance(result, str), (
-            f"Expected str return type, got {type(result).__name__}"
-        )
+        assert isinstance(result, str), f"Expected str return type, got {type(result).__name__}"
         assert "step_count" in result or "step" in result.lower(), (
             f"Result should mention step count. Got: {result[:200]}"
         )
@@ -242,9 +234,7 @@ class TestToolExecution:
         result = await server.execute_workflow_step()
 
         # Then: returns a string with prompt content
-        assert isinstance(result, str), (
-            f"Expected str return type, got {type(result).__name__}"
-        )
+        assert isinstance(result, str), f"Expected str return type, got {type(result).__name__}"
         assert "prompt" in result.lower() or "step" in result.lower(), (
             f"Result should contain prompt/step info. Got: {result[:200]}"
         )
@@ -262,14 +252,10 @@ class TestToolExecution:
         await server.execute_workflow_step()
 
         # When: reporting the step result
-        result = await server.report_step_result(
-            step_number=0, status="passed"
-        )
+        result = await server.report_step_result(step_number=0, status="passed")
 
         # Then: returns a string confirming the outcome
-        assert isinstance(result, str), (
-            f"Expected str return type, got {type(result).__name__}"
-        )
+        assert isinstance(result, str), f"Expected str return type, got {type(result).__name__}"
         assert "success" in result.lower() or "complete" in result.lower(), (
             f"Result should confirm success. Got: {result[:200]}"
         )
@@ -283,17 +269,11 @@ class TestToolExecution:
         includes the description
         """
         # Given / When: calling with a task description
-        result = await server.get_workflow_template(
-            task_description="my task"
-        )
+        result = await server.get_workflow_template(task_description="my task")
 
         # Then: returns a string including the description
-        assert isinstance(result, str), (
-            f"Expected str return type, got {type(result).__name__}"
-        )
-        assert "my task" in result, (
-            f"Result should include task description. Got: {result[:200]}"
-        )
+        assert isinstance(result, str), f"Expected str return type, got {type(result).__name__}"
+        assert "my task" in result, f"Result should include task description. Got: {result[:200]}"
 
     @pytest.mark.asyncio
     async def test_get_workflow_state_returns_string(self) -> None:
@@ -310,9 +290,7 @@ class TestToolExecution:
         result = await server.get_workflow_state()
 
         # Then: returns a string with state info
-        assert isinstance(result, str), (
-            f"Expected str return type, got {type(result).__name__}"
-        )
+        assert isinstance(result, str), f"Expected str return type, got {type(result).__name__}"
         assert "step" in result.lower() or "state" in result.lower(), (
             f"Result should describe workflow state. Got: {result[:200]}"
         )
@@ -332,9 +310,7 @@ class TestToolExecution:
         result = await server.reset_workflow()
 
         # Then: returns a string confirming reset
-        assert isinstance(result, str), (
-            f"Expected str return type, got {type(result).__name__}"
-        )
+        assert isinstance(result, str), f"Expected str return type, got {type(result).__name__}"
         assert "success" in result.lower(), (
             f"Result should confirm reset success. Got: {result[:200]}"
         )
@@ -373,13 +349,9 @@ class TestErrorHandling:
         result = await server.execute_workflow_step()
 
         # Then: ToolResult-structured error response
-        assert isinstance(result, str), (
-            f"Expected str return type, got {type(result).__name__}"
-        )
+        assert isinstance(result, str), f"Expected str return type, got {type(result).__name__}"
         parsed = ast.literal_eval(result)
-        assert parsed["success"] is False, (
-            f"Expected success=False. Got: {parsed}"
-        )
+        assert parsed["success"] is False, f"Expected success=False. Got: {parsed}"
         assert "error" in parsed and len(parsed["error"]) > 0, (
             f"Expected non-empty 'error' field. Got: {parsed}"
         )
@@ -405,9 +377,7 @@ class TestErrorHandling:
 
         # Then: ToolResult-structured error with correct error_type
         parsed = ast.literal_eval(result)
-        assert parsed["success"] is False, (
-            f"Expected success=False. Got: {parsed}"
-        )
+        assert parsed["success"] is False, f"Expected success=False. Got: {parsed}"
         assert parsed["error_type"] == "no_workflow_loaded", (
             f"Expected error_type 'no_workflow_loaded'. Got: {parsed['error_type']}"
         )
@@ -429,9 +399,7 @@ class TestErrorHandling:
 
         # Then: ToolResult-structured error
         parsed = ast.literal_eval(result)
-        assert parsed["success"] is False, (
-            f"Expected success=False. Got: {parsed}"
-        )
+        assert parsed["success"] is False, f"Expected success=False. Got: {parsed}"
         assert parsed["error_type"] == "no_workflow_loaded", (
             f"Expected error_type 'no_workflow_loaded'. Got: {parsed['error_type']}"
         )
@@ -453,9 +421,7 @@ class TestErrorHandling:
 
         # Then: ToolResult-structured error
         parsed = ast.literal_eval(result)
-        assert parsed["success"] is False, (
-            f"Expected success=False. Got: {parsed}"
-        )
+        assert parsed["success"] is False, f"Expected success=False. Got: {parsed}"
         assert "error_type" in parsed and len(parsed["error_type"]) > 0, (
             f"Expected non-empty 'error_type' field. Got: {parsed}"
         )
@@ -480,9 +446,7 @@ class TestErrorHandling:
 
         # Then: ToolResult-structured error
         parsed = ast.literal_eval(result)
-        assert parsed["success"] is False, (
-            f"Expected success=False. Got: {parsed}"
-        )
+        assert parsed["success"] is False, f"Expected success=False. Got: {parsed}"
         assert "error" in parsed and len(parsed["error"]) > 0, (
             f"Expected non-empty 'error' field. Got: {parsed}"
         )
@@ -506,9 +470,7 @@ class TestErrorHandling:
 
         # Then: ToolResult-structured error naming the file
         parsed = ast.literal_eval(result)
-        assert parsed["success"] is False, (
-            f"Expected success=False. Got: {parsed}"
-        )
+        assert parsed["success"] is False, f"Expected success=False. Got: {parsed}"
         assert "error" in parsed and "nonexistent" in parsed["error"].lower(), (
             f"Error should reference the missing file. Got: {parsed}"
         )
@@ -533,9 +495,7 @@ class TestErrorHandling:
         result = await server.load_workflow(fixture_path)
 
         # Then: success response
-        assert isinstance(result, str), (
-            f"Expected str return type, got {type(result).__name__}"
-        )
+        assert isinstance(result, str), f"Expected str return type, got {type(result).__name__}"
         assert "true" in result.lower() or "success" in result.lower(), (
             f"Success response expected. Got: {result[:200]}"
         )
@@ -558,9 +518,7 @@ class TestDocsResource:
         Never: FastMCP resource listing internals
     """
 
-    EXPECTED_URL = (
-        "https://github.com/grimlor/workflow-orchestrator-mcp/tree/main/docs"
-    )
+    EXPECTED_URL = "https://github.com/grimlor/workflow-orchestrator-mcp/tree/main/docs"
 
     def test_get_docs_link_returns_github_url(self) -> None:
         """
@@ -570,9 +528,7 @@ class TestDocsResource:
         """
         # Given: the server module
         fn = getattr(server, "get_docs_link", None)
-        assert fn is not None, (
-            "server module should export 'get_docs_link' function"
-        )
+        assert fn is not None, "server module should export 'get_docs_link' function"
 
         # When: calling get_docs_link
         result = fn()
@@ -599,8 +555,7 @@ class TestDocsResource:
         # Then: none of the dead symbols should exist
         for name in dead_symbols:
             assert not hasattr(server, name), (
-                f"Dead resource symbol '{name}' should have been removed "
-                f"from server module"
+                f"Dead resource symbol '{name}' should have been removed from server module"
             )
 
 
@@ -630,9 +585,7 @@ class TestServerEntry:
         """
         # Given: the FastMCP instance
         mcp_instance = getattr(server, "mcp", None)
-        assert mcp_instance is not None, (
-            "server module should export 'mcp' FastMCP instance"
-        )
+        assert mcp_instance is not None, "server module should export 'mcp' FastMCP instance"
 
         # When: calling run() with mocked FastMCP.run
         with patch.object(mcp_instance, "run") as mock_run:
@@ -650,14 +603,10 @@ class TestServerEntry:
         """
         # Given: the FastMCP instance
         mcp_instance = getattr(server, "mcp", None)
-        assert mcp_instance is not None, (
-            "server module should export 'mcp' FastMCP instance"
-        )
+        assert mcp_instance is not None, "server module should export 'mcp' FastMCP instance"
 
         # When: calling main() with mocked FastMCP.run_async
-        with patch.object(
-            mcp_instance, "run_async", new_callable=AsyncMock
-        ) as mock_run_async:
+        with patch.object(mcp_instance, "run_async", new_callable=AsyncMock) as mock_run_async:
             await server.main()
 
         # Then: FastMCP.run_async called with stdio transport

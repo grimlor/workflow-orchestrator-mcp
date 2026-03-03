@@ -5,16 +5,20 @@ Composes enriched prompts from WorkflowStep fields, embedding tool names,
 resolved variables, assertion criteria, and callback instructions.
 """
 
+from __future__ import annotations
+
 import re
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 from .errors import WorkflowError
-from .workflow_state import WorkflowStep
+
+if TYPE_CHECKING:
+    from .workflow_state import WorkflowStep
 
 
 def build_enriched_prompt(
     step: WorkflowStep,
-    variables: Dict[str, Any],
+    variables: dict[str, Any],
 ) -> str:
     """
     Build an enriched prompt for a workflow step.
@@ -41,7 +45,7 @@ def build_enriched_prompt(
     # Resolve variable placeholders in description
     description = _resolve_variables(step.description, variables)
 
-    parts: List[str] = []
+    parts: list[str] = []
 
     # Step header
     parts.append(f"## Workflow Step {step.step_number + 1}: {step.name}\n")
@@ -88,9 +92,9 @@ def build_enriched_prompt(
 
     if step.assertions:
         parts.append(f"  - assertion_results: array of {len(step.assertions)} results, each with:")
-        parts.append('    - assertion: the assertion text')
-        parts.append('    - passed: true/false')
-        parts.append('    - detail: brief explanation of pass/fail')
+        parts.append("    - assertion: the assertion text")
+        parts.append("    - passed: true/false")
+        parts.append("    - detail: brief explanation of pass/fail")
 
     if step.outputs:
         output_names = list(step.outputs.values())
@@ -101,15 +105,16 @@ def build_enriched_prompt(
     return "\n".join(parts)
 
 
-def _validate_inputs(step: WorkflowStep, variables: Dict[str, Any]) -> None:
+def _validate_inputs(step: WorkflowStep, variables: dict[str, Any]) -> None:
     """Raise WorkflowError if a required input variable is missing."""
     for var_name in step.inputs:
         if var_name not in variables:
             raise WorkflowError.variable_missing(var_name, step.name)
 
 
-def _resolve_variables(text: str, variables: Dict[str, Any]) -> str:
+def _resolve_variables(text: str, variables: dict[str, Any]) -> str:
     """Replace [VARIABLE_NAME] placeholders with values from the variable store."""
+
     def replacer(match: re.Match[str]) -> str:
         var_name = match.group(1)
         if var_name in variables:

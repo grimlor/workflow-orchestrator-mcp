@@ -5,6 +5,8 @@ Tests the report_step_result() callback tool — the central innovation
 of the workflow orchestrator over the demo-assistant.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 import pytest
@@ -172,7 +174,11 @@ class TestOutputVariablesMergedOnSuccess:
             step_number=0,
             status="failed",
             assertion_results=[
-                {"assertion": 'result contains "repositories"', "passed": False, "detail": "Not found"},
+                {
+                    "assertion": 'result contains "repositories"',
+                    "passed": False,
+                    "detail": "Not found",
+                },
             ],
             output_variables={"REPO_NAME": "should-not-persist"},
             error_message="Assertion failed",

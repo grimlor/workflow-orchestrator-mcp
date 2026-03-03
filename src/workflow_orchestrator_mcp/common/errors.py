@@ -46,7 +46,7 @@ class WorkflowError(ActionableError):
     # ------------------------------------------------------------------
 
     @classmethod
-    def file_not_found(cls, file_path: str) -> "WorkflowError":
+    def file_not_found(cls, file_path: str) -> WorkflowError:
         """Create a file-not-found error."""
         return cls(
             error=f"Workflow file not found at {file_path}",
@@ -56,7 +56,7 @@ class WorkflowError(ActionableError):
         )
 
     @classmethod
-    def invalid_format(cls, file_path: str, issue: str) -> "WorkflowError":
+    def invalid_format(cls, file_path: str, issue: str) -> WorkflowError:
         """Create an invalid-format error with an example."""
         return cls(
             error=f"Invalid workflow format in {file_path}: {issue}",
@@ -66,7 +66,7 @@ class WorkflowError(ActionableError):
         )
 
     @classmethod
-    def empty_workflow(cls, file_path: str) -> "WorkflowError":
+    def empty_workflow(cls, file_path: str) -> WorkflowError:
         """Create an empty-workflow error."""
         return cls(
             error=f"No workflow steps found in {file_path}",
@@ -76,7 +76,7 @@ class WorkflowError(ActionableError):
         )
 
     @classmethod
-    def no_workflow_loaded(cls, operation: str) -> "WorkflowError":
+    def no_workflow_loaded(cls, operation: str) -> WorkflowError:
         """Create a no-workflow-loaded error."""
         return cls(
             error=f"Cannot {operation}: No workflow has been loaded",
@@ -86,7 +86,7 @@ class WorkflowError(ActionableError):
         )
 
     @classmethod
-    def missing_tool_spec(cls, step_name: str) -> "WorkflowError":
+    def missing_tool_spec(cls, step_name: str) -> WorkflowError:
         """Create a missing-tool-specification error."""
         return cls(
             error=f"Step '{step_name}' has no tool specification",
@@ -96,20 +96,17 @@ class WorkflowError(ActionableError):
         )
 
     @classmethod
-    def variable_missing(cls, variable_name: str, step_name: str) -> "WorkflowError":
+    def variable_missing(cls, variable_name: str, step_name: str) -> WorkflowError:
         """Create a missing-variable error."""
         return cls(
-            error=(
-                f"Variable '{variable_name}' required by step "
-                f"'{step_name}' has not been set"
-            ),
+            error=(f"Variable '{variable_name}' required by step '{step_name}' has not been set"),
             error_type=WorkflowErrorType.VARIABLE_MISSING,
             service=_SERVICE,
             suggestion="Ensure a prior step defines this variable in its OUTPUTS section",
         )
 
     @classmethod
-    def step_out_of_order(cls, reported_step: int, expected_step: int) -> "WorkflowError":
+    def step_out_of_order(cls, reported_step: int, expected_step: int) -> WorkflowError:
         """Create a step-out-of-order error."""
         return cls(
             error=(

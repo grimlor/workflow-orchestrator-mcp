@@ -5,6 +5,7 @@ Tests end-to-end workflow orchestration through the public API:
 load_workflow → (execute_workflow_step → report_step_result)* → get_workflow_state
 """
 
+from __future__ import annotations
 
 from typing import Any
 
@@ -31,7 +32,11 @@ def _execute_and_report(
         step_number=step_idx,
         status=status,
         assertion_results=[
-            {"assertion": a, "passed": status == "passed", "detail": "ok" if status == "passed" else "failed"}
+            {
+                "assertion": a,
+                "passed": status == "passed",
+                "detail": "ok" if status == "passed" else "failed",
+            }
             for a in assertions
         ],
         output_variables=outputs or {},
@@ -80,7 +85,9 @@ class TestExecuteCompleteWorkflowSuccessfully:
 class TestWorkflowExecutionWithStepFailure:
     """Scenario 6.2: Workflow execution with step failure"""
 
-    def test_failure_at_step2_shows_correct_statuses(self, mock_file_system: tuple[Any, Any]) -> None:
+    def test_failure_at_step2_shows_correct_statuses(
+        self, mock_file_system: tuple[Any, Any]
+    ) -> None:
         """
         As a workflow author
         I need the report to show which step failed and which were skipped

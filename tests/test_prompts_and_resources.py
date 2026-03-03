@@ -10,6 +10,8 @@ BDD spec classes:
 - TestGetWorkflowTemplateContent: Template file content verification
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -50,12 +52,8 @@ class TestGetWorkflowTemplateExecution:
         result = await server.get_workflow_template()
 
         # Then: response contains template markers
-        assert isinstance(result, str), (
-            f"Expected str, got {type(result).__name__}"
-        )
-        assert "WORKFLOW STEP" in result, (
-            "Template should contain WORKFLOW STEP marker"
-        )
+        assert isinstance(result, str), f"Expected str, got {type(result).__name__}"
+        assert "WORKFLOW STEP" in result, "Template should contain WORKFLOW STEP marker"
         assert "TOOL" in result, "Template should contain TOOL marker"
         assert "ASSERT" in result, "Template should contain ASSERT marker"
 
@@ -73,8 +71,7 @@ class TestGetWorkflowTemplateExecution:
 
         # Then: response includes the description
         assert "Audit all open PRs" in result, (
-            f"Response should include the task description. "
-            f"Got: {result[:200]}"
+            f"Response should include the task description. Got: {result[:200]}"
         )
 
     @pytest.mark.asyncio
@@ -88,12 +85,8 @@ class TestGetWorkflowTemplateExecution:
         result = await server.get_workflow_template()
 
         # Then: contains template content
-        assert isinstance(result, str), (
-            f"Expected str, got {type(result).__name__}"
-        )
-        assert "WORKFLOW STEP" in result, (
-            "Response should contain template content"
-        )
+        assert isinstance(result, str), f"Expected str, got {type(result).__name__}"
+        assert "WORKFLOW STEP" in result, "Response should contain template content"
 
     @pytest.mark.asyncio
     async def test_returns_error_when_template_missing(self) -> None:
@@ -111,9 +104,7 @@ class TestGetWorkflowTemplateExecution:
             result = await server.get_workflow_template()
 
         # Then: structured error response
-        assert isinstance(result, str), (
-            f"Expected str, got {type(result).__name__}"
-        )
+        assert isinstance(result, str), f"Expected str, got {type(result).__name__}"
         assert "false" in result.lower() or "error" in result.lower(), (
             f"Should indicate failure. Got: {result[:200]}"
         )
@@ -174,9 +165,7 @@ class TestGetWorkflowTemplateContent:
         """
         # Given / When: template file content
         # Then: contains skeleton markers
-        assert "Skeleton" in template_text, (
-            "Template should contain Skeleton section"
-        )
+        assert "Skeleton" in template_text, "Template should contain Skeleton section"
         assert "<Step 1 name>" in template_text or "<Workflow Title>" in template_text, (
             "Template should contain placeholder text"
         )
@@ -208,9 +197,7 @@ class TestGetWorkflowTemplateContent:
         # Given / When: template file content
         # Then: contains variable flow information
         lower = template_text.lower()
-        assert "variable flow" in lower, (
-            "Template should explain variable flow"
-        )
+        assert "variable flow" in lower, "Template should explain variable flow"
         assert "report_step_result" in template_text, (
             "Template should reference report_step_result for variable passing"
         )

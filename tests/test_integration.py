@@ -9,6 +9,8 @@ BDD spec class:
 - TestFastMCPIntegration: Real end-to-end through FastMCP test client
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import pytest
@@ -23,9 +25,7 @@ from workflow_orchestrator_mcp.server import mcp
 
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 
-EXPECTED_DOCS_URL = (
-    "https://github.com/grimlor/workflow-orchestrator-mcp/tree/main/docs"
-)
+EXPECTED_DOCS_URL = "https://github.com/grimlor/workflow-orchestrator-mcp/tree/main/docs"
 
 
 class TestFastMCPIntegration:
@@ -61,17 +61,17 @@ class TestFastMCPIntegration:
 
         # Then: six tools with expected names
         names = sorted([t.name for t in tools])
-        expected = sorted([
-            "load_workflow",
-            "execute_workflow_step",
-            "report_step_result",
-            "get_workflow_state",
-            "reset_workflow",
-            "get_workflow_template",
-        ])
-        assert names == expected, (
-            f"Expected tools {expected}, got {names}"
+        expected = sorted(
+            [
+                "load_workflow",
+                "execute_workflow_step",
+                "report_step_result",
+                "get_workflow_state",
+                "reset_workflow",
+                "get_workflow_template",
+            ]
         )
+        assert names == expected, f"Expected tools {expected}, got {names}"
 
     @pytest.mark.asyncio
     async def test_call_load_workflow_with_fixture(self) -> None:
@@ -85,9 +85,7 @@ class TestFastMCPIntegration:
 
         # When: calling load_workflow through FastMCP
         async with Client(mcp) as client:
-            result = await client.call_tool(
-                "load_workflow", {"file_path": fixture_path}
-            )
+            result = await client.call_tool("load_workflow", {"file_path": fixture_path})
 
         # Then: result mentions step count
         result_text = str(result)
@@ -126,6 +124,5 @@ class TestFastMCPIntegration:
         # Then: returns the GitHub docs URL
         content_text = str(content)
         assert EXPECTED_DOCS_URL in content_text, (
-            f"Expected URL '{EXPECTED_DOCS_URL}' in response. "
-            f"Got: {content_text[:200]}"
+            f"Expected URL '{EXPECTED_DOCS_URL}' in response. Got: {content_text[:200]}"
         )

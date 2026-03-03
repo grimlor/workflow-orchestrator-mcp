@@ -12,9 +12,10 @@ Extracts workflow steps and metadata from markdown files following the format:
     ### ✅ ASSERT: (optional)
 """
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
-from typing import Dict, List
 
 from actionable_errors import ErrorType
 
@@ -22,7 +23,7 @@ from .errors import WorkflowError
 from .workflow_state import WorkflowStep
 
 
-def parse_workflow_markdown(file_path: str) -> List[WorkflowStep]:
+def parse_workflow_markdown(file_path: str) -> list[WorkflowStep]:
     """
     Parse a workflow markdown file and extract all steps.
 
@@ -48,7 +49,7 @@ def parse_workflow_markdown(file_path: str) -> List[WorkflowStep]:
             error_type=ErrorType.INTERNAL,
             service="workflow-orchestrator",
             suggestion="Ensure the file is readable and properly encoded",
-        )
+        ) from e
 
     steps = _extract_steps(content, file_path)
 
@@ -58,7 +59,7 @@ def parse_workflow_markdown(file_path: str) -> List[WorkflowStep]:
     return steps
 
 
-def _extract_steps(content: str, file_path: str) -> List[WorkflowStep]:
+def _extract_steps(content: str, file_path: str) -> list[WorkflowStep]:
     """
     Extract all workflow steps from markdown content.
 
@@ -72,7 +73,7 @@ def _extract_steps(content: str, file_path: str) -> List[WorkflowStep]:
     if not header_matches:
         return []
 
-    steps: List[WorkflowStep] = []
+    steps: list[WorkflowStep] = []
 
     for i, match in enumerate(header_matches):
         step_name = match.group(1).strip()
@@ -122,7 +123,7 @@ def _extract_description(section: str, file_path: str, step_name: str) -> str:
     return code_block.group(1).strip()
 
 
-def _extract_tools(section: str, file_path: str, step_name: str) -> List[str]:
+def _extract_tools(section: str, file_path: str, step_name: str) -> list[str]:
     """
     Extract tool names from TOOL: or TOOLS: sections.
 
@@ -150,13 +151,13 @@ def _extract_tools(section: str, file_path: str, step_name: str) -> List[str]:
     raise WorkflowError.missing_tool_spec(step_name)
 
 
-def _extract_inputs(section: str) -> Dict[str, str]:
+def _extract_inputs(section: str) -> dict[str, str]:
     """
     Extract input variable specifications from INPUTS: section.
 
     Format: - VARIABLE_NAME: description text
     """
-    inputs: Dict[str, str] = {}
+    inputs: dict[str, str] = {}
     match = re.search(r"###\s*📥\s*INPUTS:\s*\n((?:\s*-\s*.+\n?)+)", section)
     if match:
         for line in match.group(1).strip().splitlines():
@@ -167,14 +168,14 @@ def _extract_inputs(section: str) -> Dict[str, str]:
     return inputs
 
 
-def _extract_outputs(section: str) -> Dict[str, str]:
+def _extract_outputs(section: str) -> dict[str, str]:
     """
     Extract output variable mappings from OUTPUTS: section.
 
     Format: - result.field.path → VARIABLE_NAME
     Returns: {result.field.path: VARIABLE_NAME}
     """
-    outputs: Dict[str, str] = {}
+    outputs: dict[str, str] = {}
     match = re.search(r"###\s*📤\s*OUTPUTS:\s*\n((?:\s*-\s*.+\n?)+)", section)
     if match:
         for line in match.group(1).strip().splitlines():
@@ -189,13 +190,13 @@ def _extract_outputs(section: str) -> Dict[str, str]:
     return outputs
 
 
-def _extract_assertions(section: str) -> List[str]:
+def _extract_assertions(section: str) -> list[str]:
     """
     Extract assertion lines from ASSERT: section.
 
     Format: - assertion text (natural language)
     """
-    assertions: List[str] = []
+    assertions: list[str] = []
     match = re.search(r"###\s*✅\s*ASSERT:\s*\n((?:\s*-\s*.+\n?)+)", section)
     if match:
         for line in match.group(1).strip().splitlines():
