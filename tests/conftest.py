@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from workflow_orchestrator_mcp.common.workflow_state import _workflow_state  # noqa: PLC2701
+from workflow_orchestrator_mcp.common.workflow_state import get_state
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -16,18 +16,20 @@ if TYPE_CHECKING:
 @pytest.fixture(autouse=True)
 def reset_workflow_state() -> Generator[None]:
     """Reset global workflow state before each test"""
-    _workflow_state.file_path = ""
-    _workflow_state.steps = []
-    _workflow_state.current_step = 0
-    _workflow_state.variables.clear()
-    _workflow_state.step_outcomes.clear()
+    state = get_state()
+    state.file_path = ""
+    state.steps = []
+    state.current_step = 0
+    state.variables.clear()
+    state.step_outcomes.clear()
     yield
     # Clean up after test as well
-    _workflow_state.file_path = ""
-    _workflow_state.steps = []
-    _workflow_state.current_step = 0
-    _workflow_state.variables.clear()
-    _workflow_state.step_outcomes.clear()
+    state = get_state()
+    state.file_path = ""
+    state.steps = []
+    state.current_step = 0
+    state.variables.clear()
+    state.step_outcomes.clear()
 
 
 @pytest.fixture

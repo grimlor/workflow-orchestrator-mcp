@@ -13,7 +13,6 @@ from unittest.mock import patch
 import pytest
 
 from workflow_orchestrator_mcp.common.errors import WorkflowError
-from workflow_orchestrator_mcp.common.prompt_builder import _resolve_variables  # noqa: PLC2701
 from workflow_orchestrator_mcp.common.workflow_state import (
     AssertionResult,
     StepOutcome,
@@ -338,88 +337,55 @@ Run extraction tool
         )
 
 
-class TestExecuteWorkflowStepDefensiveGuard:
-    """
-    REQUIREMENT: A safety net catches the impossible case where get_current_step
-                 returns None after guards pass.
-
-    WHO: The workflow orchestrator runtime
-    WHAT: If get_current_step() returns None despite is_complete and is_failed
-          both being False, a WorkflowError is raised mentioning "no more steps"
-    WHY: This defensive guard prevents a NoneType crash in production if
-         state invariants are violated by a future code change
-
-    MOCK BOUNDARY:
-        Mock:  filesystem via mock_file_system fixture (pathlib.Path I/O);
-               get_current_step, is_complete, is_failed patched to simulate impossible state
-        Real:  execute_workflow_step guard logic
-        Never: Skip the guard — it is the subject under test
-    """
-
-    def test_step_none_after_guards_pass_raises_actionable_error(
-        self, mock_file_system: tuple[Any, Any]
-    ) -> None:
-        """
-        Given a workflow where get_current_step returns None despite guards passing
-        When execute_workflow_step is called
-        Then a WorkflowError is raised mentioning "no more steps"
-        """
-        # Given: a loaded workflow with patched state to simulate impossible condition
-        load_workflow("/path/to/workflow.md")
-        state = get_state()
-
-        with (
-            patch.object(state, "get_current_step", return_value=None),
-            patch.object(
-                type(state), "is_complete", new_callable=lambda: property(lambda self: False)
-            ),
-            patch.object(
-                type(state), "is_failed", new_callable=lambda: property(lambda self: False)
-            ),
-            # When: execute_workflow_step is called
-            pytest.raises(WorkflowError) as exc_info,
-        ):
-            execute_workflow_step()
-
-        # Then: the error mentions "no more steps"
-        assert "no more steps" in exc_info.value.error.lower(), (
-            f"Expected 'no more steps' in error, got: {exc_info.value.error}"
-        )
-
-
 class TestUnresolvedVariablePlaceholder:
     """
     REQUIREMENT: Unresolved variable placeholders are left intact in the prompt.
 
-    WHO: The workflow orchestrator building prompts for the LLM
-    WHAT: When a placeholder like [VAR_NAME] has no matching value in the
-          variables dict, it is left as-is in the resolved string;
-          resolved placeholders are replaced with their values
+    WHO: The LLM consumer receiving prompts with partial variable resolution
+    WHAT: When a step description contains a [PLACEHOLDER] that has no matching
+          value in the variables dict, the placeholder passes through to the
+          prompt unchanged; resolved placeholders are replaced with their values
     WHY: Leaving unresolved placeholders visible lets the LLM report
          what's missing instead of silently dropping the reference
 
     MOCK BOUNDARY:
-        Mock:  filesystem via mock_file_system fixture (pathlib.Path I/O)
-        Real:  _resolve_variables function (pure string transformation)
-        Never: Mock the regex — the substitution logic is the subject under test
+        Mock:  filesystem via patch (pathlib.Path I/O for workflow loading)
+        Real:  execute_workflow_step, variable resolution, WorkflowState
+        Never: Call _resolve_variables directly — test through execute_workflow_step
     """
 
-    def test_unresolved_placeholder_left_intact(self, mock_file_system: tuple[Any, Any]) -> None:
+    def test_undeclared_placeholder_passes_through_to_prompt(self) -> None:
         """
-        Given a prompt with two placeholders where only one has a value
-        When _resolve_variables is called
-        Then the resolved placeholder is replaced and the unresolved one remains
+        Given a workflow step whose description contains an undeclared placeholder
+        When execute_workflow_step is called
+        Then the undeclared placeholder appears unchanged in the prompt
         """
-        # Given: a prompt with [SERVER_NAME] (resolved) and [PORT] (unresolved)
-        result = _resolve_variables(
-            "Connect to [SERVER_NAME] on port [PORT]",
-            {"SERVER_NAME": "prod-db"},
-        )
+        # Given: a workflow whose step description references [DEPLOY_TARGET]
+        #        which is NOT declared as an INPUT and has no value
+        workflow_with_undeclared_placeholder = """# Placeholder Workflow
 
-        # Then: resolved placeholder is replaced, unresolved is left intact
-        assert "prod-db" in result, (
-            f"Expected resolved placeholder 'prod-db' in result, got: {result}"
-        )
-        assert "[PORT]" in result, (
-            f"Expected unresolved placeholder '[PORT]' to remain intact, got: {result}"
+### 🔧 WORKFLOW STEP: Deploy to environment
+```
+Deploy the application to [DEPLOY_TARGET] environment and verify health check.
+```
+
+### 🛠️ TOOL: deploy_tool
+
+### ✅ ASSERT:
+- deployment succeeded
+"""
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value=workflow_with_undeclared_placeholder),
+        ):
+            load_workflow("/path/to/placeholder.md")
+
+        # When: execute_workflow_step is called
+        result = execute_workflow_step()
+
+        # Then: the undeclared placeholder passes through unchanged
+        prompt = result["prompt"]
+        assert "[DEPLOY_TARGET]" in prompt, (
+            f"Expected undeclared placeholder '[DEPLOY_TARGET]' to remain intact in prompt, "
+            f"got: {prompt[:200]}"
         )

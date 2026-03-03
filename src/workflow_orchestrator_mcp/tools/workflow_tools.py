@@ -91,13 +91,7 @@ def execute_workflow_step() -> dict[str, Any]:
         )
 
     step = state.get_current_step()
-    if step is None:
-        raise WorkflowError(
-            error="No more steps to execute",
-            error_type=ErrorType.INTERNAL,
-            service="workflow-orchestrator",
-            suggestion="The workflow may be complete — check get_workflow_state()",
-        )
+    assert step is not None  # is_complete/is_failed guards ensure a step exists
 
     prompt = build_enriched_prompt(step, state.variables)
 
