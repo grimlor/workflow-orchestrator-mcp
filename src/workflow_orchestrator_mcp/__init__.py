@@ -41,6 +41,7 @@ __all__ = [
     "WorkflowErrorType",
     "WorkflowState",
     "WorkflowStep",
+    "__version__",
     "execute_workflow_step",
     "get_state",
     "get_workflow_state",

@@ -20,12 +20,6 @@ from .tools import workflow_tools
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-_PACKAGE_ROOT = Path(__file__).resolve().parent
-_WORKFLOW_TEMPLATE_PATH = _PACKAGE_ROOT / "resources" / "workflow_template.md"
-
-# ---------------------------------------------------------------------------
 # FastMCP instance
 # ---------------------------------------------------------------------------
 mcp = FastMCP("workflow-orchestrator-mcp")
@@ -121,15 +115,12 @@ async def get_workflow_template(task_description: str | None = None) -> str:
         task_description: Optional brief description of what the workflow
             should accomplish. Included in the response when provided.
     """
-    try:
-        result = workflow_tools.get_workflow_template(
-            template_path=_WORKFLOW_TEMPLATE_PATH,
-            task_description=task_description,
-        )
-        return str(result)
-    except ActionableError as e:
-        logger.warning("get_workflow_template failed: %s", e)
-        return str(ToolResult.fail(e).to_dict())
+    template_path = Path(__file__).resolve().parent / "resources" / "workflow_template.md"
+    result = workflow_tools.get_workflow_template(
+        template_path=template_path,
+        task_description=task_description,
+    )
+    return str(result)
 
 
 # ---------------------------------------------------------------------------

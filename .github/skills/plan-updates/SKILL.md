@@ -18,8 +18,9 @@ done vs. what remains.
 ### 1. Project Plan
 
 **Location:** The project's plan document — typically a Markdown file with checkbox
-lists organized by phase. Look for it in the `.copilot/work plans/` directory,
-project root, or ask the user for the location.
+lists organized by phase. Common locations include a `docs/` directory,
+`.copilot/` directory, project root, or a project management tool.
+Ask the user for the location if not obvious.
 
 Each phase has a heading like `### Phase N — Description` followed by checkboxes:
 
@@ -36,7 +37,7 @@ Each phase has a heading like `### Phase N — Description` followed by checkbox
 - Append the phase marker (e.g., `✅`) to the phase heading when all items are checked
 - If a new phase is needed, follow the existing naming convention (`Phase Na`, `Phase Nb`, etc.)
 - Include the BDD spec file and test count when checking off test-related items
-  (e.g., `BDD specs: test_comp_parser.py (22 tests), test_comp_scoring.py (15 tests)`)
+  (e.g., `BDD specs: test_validation.py (18 tests), test_processing.py (12 tests)`)
 - Brief descriptions should explain WHAT was built and WHERE in the codebase
 
 ### 2. BDD Specifications

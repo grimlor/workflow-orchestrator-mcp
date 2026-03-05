@@ -3,6 +3,11 @@ Error handling and reporting specifications
 
 Tests error handling for parsing failures, workflow execution reports,
 and detailed failure diagnostics.
+
+Spec classes:
+    TestActionableErrorForParsingFailure
+    TestWorkflowExecutionReport
+    TestDetailedFailureDiagnostics
 """
 
 from __future__ import annotations

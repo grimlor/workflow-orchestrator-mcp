@@ -3,6 +3,13 @@ Scenario Group 5: Feedback Loop (report_step_result)
 
 Tests the report_step_result() callback tool — the central innovation
 of the workflow orchestrator over the demo-assistant.
+
+Spec classes:
+    TestLLMReportsSuccessfulStepOutcome
+    TestLLMReportsFailedStepOutcome
+    TestLLMReportsPartialAssertionResults
+    TestOutputVariablesMergedOnSuccess
+    TestReportStepResultOutOfOrder
 """
 
 from __future__ import annotations

@@ -3,6 +3,13 @@ Scenario Group 4: Variable Flow Between Steps
 
 Tests the public APIs: report_step_result() (output capture) and
 execute_workflow_step() (variable substitution in prompts).
+
+Spec classes:
+    TestLLMReportsOutputVariables
+    TestSubstituteVariableInNextStep
+    TestVariableSubstitutionInDescription
+    TestMissingRequiredInputVariable
+    TestChainOutputsThroughMultipleSteps
 """
 
 from __future__ import annotations

@@ -3,6 +3,15 @@ Coverage gap specifications
 
 Tests for edge cases and alternate paths not covered by the primary scenario groups.
 Each class specifies a behavioral contract for a specific boundary condition.
+
+Spec classes:
+    TestNoWorkflowLoadedGuard
+    TestExecuteWorkflowStepGuards
+    TestStepOutcomeAllAssertionsPassed
+    TestParserEdgeCases
+    TestUnresolvedVariablePlaceholder
+    TestVersionFallbackOnMissingBuild
+    TestTemplateFileNotFound
 """
 
 from __future__ import annotations
@@ -23,6 +32,7 @@ from workflow_orchestrator_mcp.common.workflow_state import (
 from workflow_orchestrator_mcp.tools.workflow_tools import (
     execute_workflow_step,
     get_workflow_state,
+    get_workflow_template,
     load_workflow,
     report_step_result,
     reset_workflow,
@@ -126,7 +136,7 @@ class TestExecuteWorkflowStepGuards:
 
         for i in range(3):
             execute_workflow_step()
-            outputs = {"REPO_NAME": "r"} if i == 0 else ({"PR_ID": "1"} if i == 2 else {})
+            outputs = {"REPO_NAME": "test-repo"} if i == 0 else ({"PR_ID": "42"} if i == 2 else {})
             report_step_result(
                 step_number=i,
                 status="passed",
@@ -388,4 +398,92 @@ Deploy the application to [DEPLOY_TARGET] environment and verify health check.
         assert "[DEPLOY_TARGET]" in prompt, (
             f"Expected undeclared placeholder '[DEPLOY_TARGET]' to remain intact in prompt, "
             f"got: {prompt[:200]}"
+        )
+
+
+class TestVersionFallbackOnMissingBuild:
+    """
+    REQUIREMENT: The package exposes a version string even without a build step.
+
+    WHO: Developers using editable installs or CI environments before build
+    WHAT: When _version.py cannot be imported, __version__ falls back to
+          "0.0.0+unknown" rather than raising an ImportError
+    WHY: Code that reads __version__ (logging, CLI --version, debug output)
+         must not crash when the package is installed in development mode
+
+    MOCK BOUNDARY:
+        Mock:  sys.modules entry for _version (simulates missing build artifact)
+        Real:  The importlib machinery that triggers the fallback
+        Never: Set __version__ directly — always trigger via the import mechanism
+    """
+
+    def test_version_falls_back_when_version_module_missing(self) -> None:
+        """
+        Given the _version module does not exist (editable install, no build)
+        When the package is imported
+        Then __version__ is "0.0.0+unknown"
+        """
+        # Given: _version is removed from the module cache and made unimportable
+        import importlib  # noqa: PLC0415
+        import sys  # noqa: PLC0415
+
+        import workflow_orchestrator_mcp  # noqa: PLC0415
+
+        saved = sys.modules.pop("workflow_orchestrator_mcp._version", None)
+        sys.modules["workflow_orchestrator_mcp._version"] = None  # type: ignore[assignment]
+
+        try:
+            # When: the package is re-imported
+            importlib.reload(workflow_orchestrator_mcp)
+
+            # Then: version falls back
+            assert workflow_orchestrator_mcp.__version__ == "0.0.0+unknown", (
+                f"Expected '0.0.0+unknown' fallback, got '{workflow_orchestrator_mcp.__version__}'"
+            )
+        finally:
+            # Restore the real module so other tests aren't affected
+            if saved is not None:
+                sys.modules["workflow_orchestrator_mcp._version"] = saved
+            else:
+                sys.modules.pop("workflow_orchestrator_mcp._version", None)
+            importlib.reload(workflow_orchestrator_mcp)
+
+
+class TestTemplateFileNotFound:
+    """
+    REQUIREMENT: get_workflow_template raises an actionable error when the
+    template file cannot be found at the given path.
+
+    WHO: Any caller passing a template_path to get_workflow_template
+    WHAT: A nonexistent path raises WorkflowError with a message naming
+          the missing file and a suggestion to re-install
+    WHY: A generic FileNotFoundError gives the caller no remediation path —
+         the actionable error tells them exactly what to do
+
+    MOCK BOUNDARY:
+        Mock:  nothing — uses a real nonexistent path on the filesystem
+        Real:  get_workflow_template function, WorkflowError construction
+        Never: Patch pathlib or read_text — use a genuinely missing path
+    """
+
+    def test_nonexistent_template_path_raises_actionable_error(self) -> None:
+        """
+        Given a template_path pointing to a file that does not exist
+        When get_workflow_template is called
+        Then a WorkflowError is raised naming the missing file
+        """
+        # Given: a path that does not exist
+        from pathlib import Path  # noqa: PLC0415
+
+        bad_path = Path("/nonexistent/workflow_template.md")
+
+        # When / Then: calling with the bad path raises WorkflowError
+        with pytest.raises(WorkflowError) as exc_info:
+            get_workflow_template(template_path=bad_path)
+
+        assert "not found" in str(exc_info.value).lower(), (
+            f"Error should mention 'not found'. Got: {exc_info.value}"
+        )
+        assert str(bad_path) in str(exc_info.value), (
+            f"Error should name the missing path '{bad_path}'. Got: {exc_info.value}"
         )

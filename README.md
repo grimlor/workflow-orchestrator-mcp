@@ -97,7 +97,7 @@ Add to your VS Code settings or `.vscode/mcp.json`:
 uv run pytest                    # Run tests (77 BDD specs)
 uv run pytest --cov              # Run tests with coverage
 uv run ruff check src/ tests/    # Lint
-uv run mypy src/                 # Type check
+uv run pyright src/ tests/         # Type check
 ```
 
 ### Project Structure

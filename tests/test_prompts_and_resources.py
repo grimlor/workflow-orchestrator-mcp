@@ -13,7 +13,6 @@ BDD spec classes:
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -30,8 +29,7 @@ class TestGetWorkflowTemplateExecution:
 
     WHO: An AI agent that needs to author a new workflow
     WHAT: The function returns the full template content; when
-          task_description is provided it is included in the response;
-          when the template file is missing an actionable error is returned
+          task_description is provided it is included in the response
     WHY: This is the primary mechanism for the agent to learn the format
          without the user having to navigate to the repo
 
@@ -87,27 +85,6 @@ class TestGetWorkflowTemplateExecution:
         # Then: contains template content
         assert isinstance(result, str), f"Expected str, got {type(result).__name__}"
         assert "WORKFLOW STEP" in result, "Response should contain template content"
-
-    @pytest.mark.asyncio
-    async def test_returns_error_when_template_missing(self) -> None:
-        """
-        Given the template file does not exist on disk
-        When calling get_workflow_template
-        Then a structured error is returned (not an exception)
-        """
-        # Given: template path points to nonexistent file
-        with patch(
-            "workflow_orchestrator_mcp.server._WORKFLOW_TEMPLATE_PATH",
-            Path("/nonexistent/workflow_template.md"),
-        ):
-            # When: calling get_workflow_template
-            result = await server.get_workflow_template()
-
-        # Then: structured error response
-        assert isinstance(result, str), f"Expected str, got {type(result).__name__}"
-        assert "false" in result.lower() or "error" in result.lower(), (
-            f"Should indicate failure. Got: {result[:200]}"
-        )
 
 
 class TestGetWorkflowTemplateContent:

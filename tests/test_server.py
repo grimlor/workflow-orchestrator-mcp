@@ -430,31 +430,6 @@ class TestErrorHandling:
         )
 
     @pytest.mark.asyncio
-    async def test_get_workflow_template_missing_file_returns_error(self) -> None:
-        """
-        Given the template file does not exist on disk
-        When calling get_workflow_template() via the server wrapper
-        Then the response contains ToolResult-structured fields
-        """
-        # Given: template path points to nonexistent file
-        with patch(
-            "workflow_orchestrator_mcp.server._WORKFLOW_TEMPLATE_PATH",
-            Path("/nonexistent/workflow_template.md"),
-        ):
-            # When: calling get_workflow_template
-            result = await server.get_workflow_template()
-
-        # Then: ToolResult-structured error
-        parsed = ast.literal_eval(result)
-        assert parsed["success"] is False, f"Expected success=False. Got: {parsed}"
-        assert "error" in parsed and len(parsed["error"]) > 0, (
-            f"Expected non-empty 'error' field. Got: {parsed}"
-        )
-        assert "suggestion" in parsed and len(parsed["suggestion"]) > 0, (
-            f"Expected non-empty 'suggestion' field. Got: {parsed}"
-        )
-
-    @pytest.mark.asyncio
     async def test_nonexistent_file_returns_structured_error(self) -> None:
         """
         Given a non-existent file path

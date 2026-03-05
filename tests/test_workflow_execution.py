@@ -3,6 +3,12 @@ Complete workflow execution specifications
 
 Covers end-to-end workflow orchestration through the public API:
 load_workflow → (execute_workflow_step → report_step_result)* → get_workflow_state
+
+Spec classes:
+    TestExecuteCompleteWorkflowSuccessfully
+    TestWorkflowExecutionWithStepFailure
+    TestWorkflowStateTracking
+    TestResumeWorkflowFromFailurePoint
 """
 
 from __future__ import annotations

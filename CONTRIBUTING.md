@@ -39,7 +39,7 @@ All checks must pass before submitting a pull request.
 
 - **Linting**: [Ruff](https://docs.astral.sh/ruff/) with rules E, W, F, I, N, UP, B, SIM, TCH, RUF, PLC0415, PLC2701
 - **Line length**: 99 characters max
-- **Type hints**: Required on all functions — mypy runs in strict mode
+- **Type hints**: Required on all functions — pyright handles type checking
 - **`from __future__ import annotations`**: Required in every Python file
 - **Naming**: Follow PEP 8 conventions
 - **Assertions**: Every `assert` must include a diagnostic message — bare assertions are prohibited
@@ -156,7 +156,7 @@ class TestLLMReportsSuccessfulStepOutcome:
 
 1. **Fork** the repository and create a feature branch from `main`
 2. **Make your changes** with clear, focused commits
-3. **Run all checks** — tests, ruff, mypy must pass
+3. **Run all checks** — tests, ruff, pyright must pass
 4. **Submit a PR** with a clear description of what and why
 5. **Respond to feedback** — maintainers may request changes
 

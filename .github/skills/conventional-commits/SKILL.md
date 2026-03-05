@@ -60,20 +60,15 @@ Existing workflows must be updated.
 Scope narrows the area of change. Use the module or subsystem name:
 
 ```
-feat(parser): support multi-tool step syntax
-fix(server): handle missing template path gracefully
-test(resources): add template content assertions
-ci(release): add python-semantic-release workflow
+feat(auth): add OAuth2 token refresh
+fix(api): handle missing query parameter gracefully
+test(models): add validation assertions
+ci(release): add semantic-release workflow
 ```
 
-Common scopes for this project:
-- `parser` — workflow parsing logic
-- `server` — MCP server, tool routing, resource handlers
-- `tools` — tool functions in `workflow_tools.py`
-- `state` — workflow state management
-- `prompt` — prompt building logic
-- `release` — versioning and release automation
-- `deps` — dependency updates
+Define scopes based on your project's module structure. Good scopes are
+short, stable names that map to subsystems or directories — e.g., `api`,
+`auth`, `models`, `cli`, `config`, `deps`, `release`.
 
 ### Description (required)
 
@@ -97,26 +92,25 @@ Explain *what* and *why*, not *how*. Wrap at 72 characters.
 ## Examples
 
 ```
-feat: add get_workflow_template tool
+feat(auth): add OAuth2 token refresh
 
-The agent needs a way to learn the workflow format after a one-click
-install. This tool returns the template with format spec, skeleton,
-and a concrete example — all from a resource file that ships inside
-the package.
+Access tokens now refresh automatically when they expire within
+5 minutes of a request. This prevents 401 errors during long
+running operations without requiring manual re-authentication.
 
 Refs: #42
 ```
 
 ```
-fix(parser): handle empty description blocks without crashing
+fix(api): handle missing query parameter without crashing
 
-Previously, a step with an empty fenced code block caused a
-NoneType error in the description extractor. Now it returns an
-empty string and logs a warning.
+Previously, an empty `filter` parameter caused a TypeError in
+the query builder. Now it defaults to an empty dict and logs
+a warning.
 ```
 
 ```
-ci(release): add python-semantic-release workflow
+ci(release): add semantic-release workflow
 
 Automates version bumping and GitHub Release creation on push to
 main. Reads conventional commit history since the last tag and
@@ -124,18 +118,19 @@ determines the appropriate semver increment.
 ```
 
 ```
-docs: update README with uvx install instructions
+docs: update README with installation instructions
 ```
 
 ```
-test(resources): add template content assertions
+test(models): add input validation assertions
 ```
 
 ```
-build(deps): bump mcp from 0.9.0 to 1.0.0
+build(deps): bump fastapi from 0.109.0 to 0.110.0
 
-BREAKING CHANGE: mcp 1.0.0 removes the deprecated prompt API.
-All prompt handlers have been replaced with tools.
+BREAKING CHANGE: 0.110.0 removes the deprecated `on_event`
+lifecycle hook. All startup handlers have been migrated to
+`lifespan` context managers.
 ```
 
 ---
@@ -155,7 +150,8 @@ All prompt handlers have been replaced with tools.
 
 ## Why This Exists
 
-`python-semantic-release` reads commit messages to determine version bumps
+Semantic release tools (e.g., `semantic-release`, `python-semantic-release`,
+`release-please`) read commit messages to determine version bumps
 automatically. Without consistent conventional commits, the automation cannot
 determine whether a change is a feature, fix, or breaking change — and either
 bumps incorrectly or not at all.

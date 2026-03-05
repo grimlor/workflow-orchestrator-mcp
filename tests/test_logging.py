@@ -2,6 +2,9 @@
 Logger configuration specifications
 
 Verifies the logger is configured correctly for MCP server operation.
+
+Spec classes:
+    TestLoggerConfiguration
 """
 
 from __future__ import annotations
@@ -22,7 +25,9 @@ class TestLoggerConfiguration:
          on stdout corrupts the protocol stream and breaks the client
 
     MOCK BOUNDARY:
-        Mock: nothing — this class tests pure computation
+        Mock:  nothing — this class tests pure computation
+        Real:  logger instance from workflow_orchestrator_mcp.common.logging
+        Never: Construct a logger directly — always import the module-level instance
     """
 
     def test_logger_exists_with_correct_name(self) -> None:
