@@ -16,6 +16,7 @@ Spec classes:
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
@@ -424,10 +425,10 @@ class TestVersionFallbackOnMissingBuild:
         Then __version__ is "0.0.0+unknown"
         """
         # Given: _version is removed from the module cache and made unimportable
-        import importlib  # noqa: PLC0415
-        import sys  # noqa: PLC0415
+        import importlib  # noqa: PLC0415  # must import after sys.modules manipulation
+        import sys  # noqa: PLC0415  # must import after sys.modules manipulation
 
-        import workflow_orchestrator_mcp  # noqa: PLC0415
+        import workflow_orchestrator_mcp  # noqa: PLC0415  # must import after sys.modules manipulation
 
         saved = sys.modules.pop("workflow_orchestrator_mcp._version", None)
         sys.modules["workflow_orchestrator_mcp._version"] = None  # type: ignore[assignment]
@@ -473,8 +474,6 @@ class TestTemplateFileNotFound:
         Then a WorkflowError is raised naming the missing file
         """
         # Given: a path that does not exist
-        from pathlib import Path  # noqa: PLC0415
-
         bad_path = Path("/nonexistent/workflow_template.md")
 
         # When / Then: calling with the bad path raises WorkflowError
