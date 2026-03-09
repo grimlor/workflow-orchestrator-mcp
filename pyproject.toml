@@ -84,6 +84,7 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["workflow_orchestrator_mcp"]
+combine-as-imports = true
 
 [tool.ruff.format]
 quote-style = "double"

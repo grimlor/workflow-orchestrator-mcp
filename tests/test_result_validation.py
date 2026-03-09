@@ -265,6 +265,6 @@ class TestAssertionCountMismatch:
 
         # Then: the result text flags the mismatch
         result_text = str(result).lower()
-        assert "mismatch" in result_text or "warning" in result_text or "unverified" in result_text, (
-            f"Expected 'mismatch', 'warning', or 'unverified' in result, got: {result_text[:300]}"
-        )
+        assert (
+            "mismatch" in result_text or "warning" in result_text or "unverified" in result_text
+        ), f"Expected 'mismatch', 'warning', or 'unverified' in result, got: {result_text[:300]}"

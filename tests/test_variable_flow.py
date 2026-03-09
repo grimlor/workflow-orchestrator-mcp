@@ -125,9 +125,7 @@ class TestSubstituteVariableInNextStep:
 
         # Then: the prompt contains the substituted value, not the placeholder
         prompt = result["prompt"]
-        assert "my-repo" in prompt, (
-            f"Expected 'my-repo' in prompt, got: {prompt[:200]}"
-        )
+        assert "my-repo" in prompt, f"Expected 'my-repo' in prompt, got: {prompt[:200]}"
         assert "[REPO_NAME]" not in prompt, (
             f"Placeholder [REPO_NAME] should be resolved but still present in: {prompt[:200]}"
         )

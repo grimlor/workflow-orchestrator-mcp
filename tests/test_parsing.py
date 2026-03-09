@@ -47,12 +47,8 @@ class TestLoadWorkflowWithToolSpecifications:
         result = load_workflow("/path/to/workflow.md")
 
         # Then: the result indicates success with expected step count and tool names
-        assert result["success"] is True, (
-            f"Expected success=True, got {result['success']}"
-        )
-        assert result["step_count"] == 3, (
-            f"Expected 3 steps, got {result['step_count']}"
-        )
+        assert result["success"] is True, f"Expected success=True, got {result['success']}"
+        assert result["step_count"] == 3, f"Expected 3 steps, got {result['step_count']}"
         first_step = result["first_step"]
         assert "tool_names" in first_step, (
             f"Expected 'tool_names' key in first_step, got keys: {list(first_step.keys())}"
@@ -79,9 +75,7 @@ class TestLoadWorkflowWithToolSpecifications:
         assert "description" in first_step, (
             f"Expected 'description' key in first_step, got keys: {list(first_step.keys())}"
         )
-        assert first_step["name"] != "", (
-            "Expected non-empty step name, got empty string"
-        )
+        assert first_step["name"] != "", "Expected non-empty step name, got empty string"
 
 
 class TestLoadWorkflowWithMultipleTools:

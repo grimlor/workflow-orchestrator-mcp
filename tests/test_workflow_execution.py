@@ -203,8 +203,7 @@ class TestWorkflowStateTracking:
             f"Expected step 0 in completed_steps, got {state_dict['completed_steps']}"
         )
         assert state_dict["is_complete"] is False, (
-            f"Expected is_complete=False with 1 of 3 steps done, "
-            f"got {state_dict['is_complete']}"
+            f"Expected is_complete=False with 1 of 3 steps done, got {state_dict['is_complete']}"
         )
 
     def test_state_shows_current_step(self, mock_file_system: tuple[Any, Any]) -> None:
