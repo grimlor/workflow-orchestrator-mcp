@@ -10,7 +10,7 @@ Spec classes:
     TestStepOutcomeAllAssertionsPassed
     TestParserEdgeCases
     TestUnresolvedVariablePlaceholder
-    TestVersionFallbackOnMissingBuild
+    TestVersionFallbackOnMissingMetadata
     TestTemplateFileNotFound
 """
 
@@ -402,38 +402,40 @@ Deploy the application to [DEPLOY_TARGET] environment and verify health check.
         )
 
 
-class TestVersionFallbackOnMissingBuild:
+class TestVersionFallbackOnMissingMetadata:
     """
-    REQUIREMENT: The package exposes a version string even without a build step.
+    REQUIREMENT: The package exposes a version string even without installed metadata.
 
     WHO: Developers using editable installs or CI environments before build
-    WHAT: When _version.py cannot be imported, __version__ falls back to
-          "0.0.0+unknown" rather than raising an ImportError
+    WHAT: When importlib.metadata cannot find the package, __version__ falls
+          back to "0.0.0+unknown" rather than raising PackageNotFoundError
     WHY: Code that reads __version__ (logging, CLI --version, debug output)
-         must not crash when the package is installed in development mode
+         must not crash when the package metadata is unavailable
 
     MOCK BOUNDARY:
-        Mock:  sys.modules entry for _version (simulates missing build artifact)
+        Mock:  importlib.metadata.version (simulates missing package metadata)
         Real:  The importlib machinery that triggers the fallback
         Never: Set __version__ directly — always trigger via the import mechanism
     """
 
-    def test_version_falls_back_when_version_module_missing(self) -> None:
+    def test_version_falls_back_when_metadata_unavailable(self) -> None:
         """
-        Given the _version module does not exist (editable install, no build)
+        Given the package metadata is not available
         When the package is imported
         Then __version__ is "0.0.0+unknown"
         """
-        # Given: _version is removed from the module cache and made unimportable
+        # Given: importlib.metadata.version raises PackageNotFoundError
         import importlib  # noqa: PLC0415  # must import after sys.modules manipulation
-        import sys  # noqa: PLC0415  # must import after sys.modules manipulation
+        from importlib.metadata import (  # noqa: PLC0415  # must import after sys.modules manipulation
+            PackageNotFoundError,
+        )
 
         import workflow_orchestrator_mcp  # noqa: PLC0415  # must import after sys.modules manipulation
 
-        saved = sys.modules.pop("workflow_orchestrator_mcp._version", None)
-        sys.modules["workflow_orchestrator_mcp._version"] = None  # type: ignore[assignment]
-
-        try:
+        with patch(
+            "importlib.metadata.version",
+            side_effect=PackageNotFoundError("workflow-orchestrator-mcp"),
+        ):
             # When: the package is re-imported
             importlib.reload(workflow_orchestrator_mcp)
 
@@ -441,13 +443,9 @@ class TestVersionFallbackOnMissingBuild:
             assert workflow_orchestrator_mcp.__version__ == "0.0.0+unknown", (
                 f"Expected '0.0.0+unknown' fallback, got '{workflow_orchestrator_mcp.__version__}'"
             )
-        finally:
-            # Restore the real module so other tests aren't affected
-            if saved is not None:
-                sys.modules["workflow_orchestrator_mcp._version"] = saved
-            else:
-                sys.modules.pop("workflow_orchestrator_mcp._version", None)
-            importlib.reload(workflow_orchestrator_mcp)
+
+        # Restore normal state
+        importlib.reload(workflow_orchestrator_mcp)
 
 
 class TestTemplateFileNotFound:

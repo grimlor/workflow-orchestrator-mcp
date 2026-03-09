@@ -39,8 +39,8 @@ class StepOutcome:
 
     step_number: int
     status: StepStatus
-    assertion_results: list[AssertionResult] = field(default_factory=list)
-    output_variables: dict[str, Any] = field(default_factory=dict)
+    assertion_results: list[AssertionResult] = field(default_factory=list[AssertionResult])
+    output_variables: dict[str, Any] = field(default_factory=dict[str, Any])
     error_message: str = ""
 
     @property
@@ -55,10 +55,10 @@ class WorkflowStep:
     step_number: int
     name: str
     description: str
-    tool_names: list[str] = field(default_factory=list)
-    inputs: dict[str, str] = field(default_factory=dict)
-    outputs: dict[str, str] = field(default_factory=dict)
-    assertions: list[str] = field(default_factory=list)
+    tool_names: list[str] = field(default_factory=list[str])
+    inputs: dict[str, str] = field(default_factory=dict[str, str])
+    outputs: dict[str, str] = field(default_factory=dict[str, str])
+    assertions: list[str] = field(default_factory=list[str])
     section_title: str = ""
 
 
@@ -73,10 +73,10 @@ class WorkflowState:
     """
 
     file_path: str = ""
-    steps: list[WorkflowStep] = field(default_factory=list)
+    steps: list[WorkflowStep] = field(default_factory=list[WorkflowStep])
     current_step: int = 0  # Index in steps list (0-based)
-    variables: dict[str, Any] = field(default_factory=dict)
-    step_outcomes: dict[int, StepOutcome] = field(default_factory=dict)
+    variables: dict[str, Any] = field(default_factory=dict[str, Any])
+    step_outcomes: dict[int, StepOutcome] = field(default_factory=dict[int, StepOutcome])
 
     @property
     def total_steps(self) -> int:

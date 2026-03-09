@@ -251,18 +251,13 @@ class TestFactoryMethodPreservation:
             WorkflowError.step_out_of_order(3, 2),
         ]
 
-        for err in factories:
-            # When: checking isinstance
-            is_workflow = isinstance(err, WorkflowError)
-            is_actionable = isinstance(err, ActionableError)
+        # Then: WorkflowError inherits from ActionableError
+        assert issubclass(WorkflowError, ActionableError)
 
-            # Then: it is both types
-            assert is_workflow, (
+        for err in factories:
+            # When/Then: each factory returns a WorkflowError (and thus an ActionableError)
+            assert type(err) is WorkflowError, (
                 f"Factory result is not a WorkflowError. "
-                f"Type: {type(err).__name__}, error: {err.error}"
-            )
-            assert is_actionable, (
-                f"Factory result is not an ActionableError. "
                 f"Type: {type(err).__name__}, error: {err.error}"
             )
 

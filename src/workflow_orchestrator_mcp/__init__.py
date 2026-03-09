@@ -8,6 +8,8 @@ variable flow, and a feedback loop via report_step_result.
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
+
 from .common import ActionableError, WorkflowError, WorkflowErrorType
 from .common.workflow_state import (
     AssertionResult,
@@ -28,8 +30,8 @@ from .tools.workflow_tools import (
 )
 
 try:
-    from ._version import __version__
-except ImportError:  # editable install or no build
+    __version__ = version("workflow-orchestrator-mcp")
+except PackageNotFoundError:
     __version__ = "0.0.0+unknown"
 
 __all__ = [

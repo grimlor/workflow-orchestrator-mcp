@@ -10,6 +10,7 @@ Spec classes:
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from workflow_orchestrator_mcp.common.logging import logger
 
@@ -69,7 +70,9 @@ class TestLoggerConfiguration:
         # Given: the logger imported from the logging module
 
         # When: the handlers are inspected
-        stderr_handlers = [h for h in logger.handlers if isinstance(h, logging.StreamHandler)]
+        stderr_handlers: list[logging.StreamHandler[Any]] = [
+            h for h in logger.handlers if isinstance(h, logging.StreamHandler)
+        ]
 
         # Then: at least one stderr handler exists
         assert len(stderr_handlers) >= 1, (
