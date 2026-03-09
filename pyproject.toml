@@ -5,9 +5,7 @@ description = "MCP server for orchestrating AI workflows defined in markdown wit
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = { text = "MIT" }
-authors = [
-    { name = "Jack Pines", email = "github@jackpines.info" }
-]
+authors = [{ name = "Jack Pines" }]
 dependencies = [
     "actionable-errors>=0.1.0",
     "fastmcp>=2.0.0",
