@@ -425,12 +425,12 @@ class TestVersionFallbackOnMissingMetadata:
         Then __version__ is "0.0.0+unknown"
         """
         # Given: importlib.metadata.version raises PackageNotFoundError
-        import importlib  # noqa: PLC0415  # must import after sys.modules manipulation
-        from importlib.metadata import (  # noqa: PLC0415  # must import after sys.modules manipulation
+        import importlib  # must import after sys.modules manipulation
+        from importlib.metadata import (  # must import after sys.modules manipulation
             PackageNotFoundError,
         )
 
-        import workflow_orchestrator_mcp  # noqa: PLC0415  # must import after sys.modules manipulation
+        import workflow_orchestrator_mcp  # must import after sys.modules manipulation
 
         with patch(
             "importlib.metadata.version",
