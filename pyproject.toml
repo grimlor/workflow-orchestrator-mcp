@@ -52,8 +52,12 @@ testpaths = ["tests"]
 python_files = ["*_test.py", "test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --strict-markers"
+addopts = "-v --strict-markers -m 'not integration and not live'"
 asyncio_mode = "auto"
+markers = [
+    "integration: marks tests requiring external services",
+    "live: marks tests requiring live network access",
+]
 
 # ---------------------------------------------------------------------------
 # Ruff
@@ -98,8 +102,8 @@ indent-style = "space"
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
-reportPrivateUsage = false
-reportMissingTypeStubs = false
+venvPath = "."
+venv = ".venv"
 
 # ---------------------------------------------------------------------------
 # python-semantic-release

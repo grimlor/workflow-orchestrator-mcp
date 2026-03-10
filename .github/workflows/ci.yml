@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -31,9 +31,11 @@ jobs:
         run: uv sync --extra dev
 
       - name: Lint with ruff
+        if: matrix.python-version == '3.13'
         run: uv run ruff check src/ tests/
 
       - name: Type check with pyright
+        if: matrix.python-version == '3.13'
         run: uv run pyright src/ tests/
 
       - name: Run tests with coverage
