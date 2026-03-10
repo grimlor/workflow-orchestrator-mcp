@@ -1,7 +1,8 @@
 # Workflow Orchestrator MCP Server
 
 [![CI](https://github.com/grimlor/workflow-orchestrator-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/grimlor/workflow-orchestrator-mcp/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/grimlor/49d45255ee72d31c0213cf11887a7f71/raw/coverage-badge.json)](https://github.com/grimlor/workflow-orchestrator-mcp/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/grimlor/49d45255ee72d31c0213cf11887a7f71/raw/workflow-orchestrator-mcp-coverage.json)](https://github.com/grimlor/workflow-orchestrator-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 An MCP server for orchestrating AI workflows defined in markdown with natural language. Evolution from [demo-assistant-mcp](https://github.com/grimlor/demo-assistant-mcp) — adds tool specifications, assertion-based validation, variable flow between steps, and an LLM feedback loop.
 
