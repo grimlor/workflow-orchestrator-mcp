@@ -152,6 +152,13 @@ class TestLLMReportsSuccessfulStepOutcome:
         )
 ```
 
+## AI Coding Agent Setup
+
+This project uses [universal-dev-skills](https://github.com/grimlor/universal-dev-skills)
+for AI coding agent configuration (skills, instructions, and agents). Clone
+that repo and follow its README to configure your editor. No per-repo setup
+is required — the skills apply automatically across all workspaces.
+
 ## Pull Request Process
 
 1. **Fork** the repository and create a feature branch from `main`
