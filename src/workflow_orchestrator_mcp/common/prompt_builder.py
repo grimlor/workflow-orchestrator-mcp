@@ -1,5 +1,5 @@
 """
-Enriched prompt builder for workflow steps
+Enriched prompt builder for workflow steps.
 
 Composes enriched prompts from WorkflowStep fields, embedding tool names,
 resolved variables, assertion criteria, and callback instructions.
@@ -38,6 +38,7 @@ def build_enriched_prompt(
 
     Raises:
         WorkflowError: If a required input variable is missing
+
     """
     # Validate required inputs are available
     _validate_inputs(step, variables)

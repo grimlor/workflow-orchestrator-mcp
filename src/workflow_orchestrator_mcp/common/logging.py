@@ -1,5 +1,5 @@
 """
-Logging configuration for workflow-orchestrator-mcp
+Logging configuration for workflow-orchestrator-mcp.
 
 Sets up standard logging to stderr for MCP server operation.
 """

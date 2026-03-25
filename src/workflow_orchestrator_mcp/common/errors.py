@@ -1,5 +1,5 @@
 """
-Domain error types for workflow-orchestrator-mcp
+Domain error types for workflow-orchestrator-mcp.
 
 Extends the ``actionable-errors`` library with workflow-specific error
 categories and convenience factory methods that preserve the local API
@@ -16,7 +16,8 @@ _SERVICE = "workflow-orchestrator"
 
 
 class WorkflowErrorType(StrEnum):
-    """Workflow-specific error categories.
+    """
+    Workflow-specific error categories.
 
     A standalone ``StrEnum`` whose string values can be passed as the
     ``error_type`` argument to :class:`ActionableError` (which accepts
@@ -34,7 +35,8 @@ class WorkflowErrorType(StrEnum):
 
 
 class WorkflowError(ActionableError):
-    """Actionable error with workflow-specific factory methods.
+    """
+    Actionable error with workflow-specific factory methods.
 
     Every factory sets ``service`` to ``"workflow-orchestrator"`` so that
     downstream consumers can identify the source without inspecting the

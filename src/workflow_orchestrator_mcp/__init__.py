@@ -1,5 +1,5 @@
 """
-Workflow Orchestrator MCP Server
+Workflow Orchestrator MCP Server.
 
 An MCP server for orchestrating AI workflows defined in markdown with natural language.
 Extends the demo-assistant-mcp pattern with tool specifications, assertions,

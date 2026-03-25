@@ -1,4 +1,5 @@
-"""Result validation tests.
+"""
+Result validation tests.
 
 Covers:
 - TestAssertionsEmbeddedInPrompt — assertions appear in enriched prompts

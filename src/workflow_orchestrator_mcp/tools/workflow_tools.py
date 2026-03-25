@@ -1,5 +1,5 @@
 """
-MCP Tools for workflow orchestration
+MCP Tools for workflow orchestration.
 
 Provides the core functions exposed as MCP tools:
 - load_workflow: Load and parse a workflow markdown file
@@ -38,6 +38,7 @@ def load_workflow(file_path: str) -> dict[str, Any]:
 
     Raises:
         ActionableError: If file not found, invalid format, or no steps
+
     """
     steps = parse_workflow_markdown(file_path)
 
@@ -72,6 +73,7 @@ def execute_workflow_step() -> dict[str, Any]:
 
     Raises:
         WorkflowError: If no workflow loaded or workflow is complete/failed
+
     """
     state = require_loaded_workflow()
 
@@ -111,7 +113,7 @@ def report_step_result(
     error_message: str = "",
 ) -> dict[str, Any]:
     """
-    Callback tool: LLM reports execution results back to orchestrator.
+    Report execution results from the LLM step back to the orchestrator.
 
     Updates workflow state with pass/fail per step and extracted variables.
     Returns the next step's enriched prompt or completion status.
@@ -128,6 +130,7 @@ def report_step_result(
 
     Raises:
         WorkflowError: If step is out of order or no workflow loaded
+
     """
     state = require_loaded_workflow()
 
@@ -210,6 +213,7 @@ def get_workflow_state() -> dict[str, Any]:
 
     Raises:
         WorkflowError: If no workflow has been loaded
+
     """
     state = require_loaded_workflow()
     return state.to_dict()
@@ -224,6 +228,7 @@ def reset_workflow() -> dict[str, Any]:
 
     Raises:
         WorkflowError: If no workflow has been loaded
+
     """
     state = require_loaded_workflow()
     state.reset()
@@ -240,8 +245,7 @@ def get_workflow_template(
     task_description: str | None = None,
 ) -> dict[str, Any]:
     """
-    Return the workflow-format specification, a starter skeleton, and a
-    concrete example so the agent can author a new workflow.
+    Return the workflow-format specification, skeleton, and example for authoring a new workflow.
 
     The template content is read from a resource file on disk
     (``docs/workflow_template.md``).
@@ -256,6 +260,7 @@ def get_workflow_template(
 
     Raises:
         WorkflowError: If the template file cannot be found.
+
     """
     try:
         template_text = template_path.read_text(encoding="utf-8")

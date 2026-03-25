@@ -1,5 +1,5 @@
 """
-Workflow Orchestrator MCP Server
+Workflow Orchestrator MCP Server.
 
 FastMCP-based server that exposes workflow orchestration tools and
 a docs resource over the MCP protocol (stdio transport).
@@ -30,10 +30,12 @@ mcp = FastMCP("workflow-orchestrator-mcp")
 # ---------------------------------------------------------------------------
 @mcp.tool()
 async def load_workflow(file_path: str) -> str:
-    """Load and parse a workflow markdown file.
+    """
+    Load and parse a workflow markdown file.
 
     Args:
         file_path: Path to the workflow markdown file.
+
     """
     try:
         result = workflow_tools.load_workflow(file_path)
@@ -62,7 +64,8 @@ async def report_step_result(
     output_variables: dict[str, Any] | None = None,
     error_message: str = "",
 ) -> str:
-    """Report execution results for a workflow step.
+    """
+    Report execution results for a workflow step.
 
     Args:
         step_number: The step number being reported on.
@@ -70,6 +73,7 @@ async def report_step_result(
         assertion_results: Per-assertion pass/fail results.
         output_variables: Extracted output variable values.
         error_message: Error details if the step failed.
+
     """
     try:
         result = workflow_tools.report_step_result(
@@ -109,11 +113,13 @@ async def reset_workflow() -> str:
 
 @mcp.tool()
 async def get_workflow_template(task_description: str | None = None) -> str:
-    """Return the workflow format spec, skeleton, and concrete example.
+    """
+    Return the workflow format spec, skeleton, and concrete example.
 
     Args:
         task_description: Optional brief description of what the workflow
             should accomplish. Included in the response when provided.
+
     """
     template_path = Path(__file__).resolve().parent / "resources" / "workflow_template.md"
     result = workflow_tools.get_workflow_template(
@@ -136,7 +142,7 @@ def get_docs_link() -> str:
 # Entry points
 # ---------------------------------------------------------------------------
 def run() -> None:
-    """Synchronous entry point (used by pyproject.toml [project.scripts])."""
+    """Run the MCP server synchronously (entry point for pyproject.toml scripts)."""
     mcp.run(transport="stdio")
 
 

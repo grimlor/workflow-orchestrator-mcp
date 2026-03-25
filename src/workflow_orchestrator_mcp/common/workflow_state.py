@@ -1,5 +1,5 @@
 """
-Workflow state management
+Workflow state management.
 
 Tracks the current position in a workflow, step outcomes (passed/failed/skipped),
 runtime variables, and assertion results.
@@ -15,7 +15,7 @@ from .errors import WorkflowError
 
 
 class StepStatus(StrEnum):
-    """Status of an individual workflow step"""
+    """Status of an individual workflow step."""
 
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
@@ -26,7 +26,7 @@ class StepStatus(StrEnum):
 
 @dataclass
 class AssertionResult:
-    """LLM-reported result for a single assertion"""
+    """LLM-reported result for a single assertion."""
 
     assertion: str
     passed: bool
@@ -35,7 +35,7 @@ class AssertionResult:
 
 @dataclass
 class StepOutcome:
-    """Reported by LLM via report_step_result callback"""
+    """Reported by LLM via report_step_result callback."""
 
     step_number: int
     status: StepStatus
@@ -45,12 +45,13 @@ class StepOutcome:
 
     @property
     def all_assertions_passed(self) -> bool:
+        """Return True if all reported assertions passed."""
         return all(r.passed for r in self.assertion_results)
 
 
 @dataclass
 class WorkflowStep:
-    """Represents a single step extracted from a workflow script"""
+    """Represent a single step extracted from a workflow script."""
 
     step_number: int
     name: str
@@ -80,48 +81,54 @@ class WorkflowState:
 
     @property
     def total_steps(self) -> int:
+        """Return the total number of steps in the workflow."""
         return len(self.steps)
 
     @property
     def completed_steps(self) -> list[int]:
+        """Return step numbers that have passed."""
         return [n for n, o in self.step_outcomes.items() if o.status == StepStatus.PASSED]
 
     @property
     def failed_steps(self) -> list[int]:
+        """Return step numbers that have failed."""
         return [n for n, o in self.step_outcomes.items() if o.status == StepStatus.FAILED]
 
     @property
     def is_failed(self) -> bool:
+        """Return True if any step has failed."""
         return any(o.status == StepStatus.FAILED for o in self.step_outcomes.values())
 
     @property
     def is_complete(self) -> bool:
+        """Return True if all steps have been reported."""
         return len(self.step_outcomes) >= self.total_steps
 
     @property
     def is_loaded(self) -> bool:
+        """Return True if a workflow file has been loaded."""
         return bool(self.file_path and self.steps)
 
     def record_step_outcome(self, outcome: StepOutcome) -> None:
-        """Record LLM-reported outcome and merge output variables"""
+        """Record LLM-reported outcome and merge output variables."""
         self.step_outcomes[outcome.step_number] = outcome
         if outcome.status == StepStatus.PASSED:
             self.variables.update(outcome.output_variables)
 
     def reset(self) -> None:
-        """Reset workflow to beginning while keeping steps loaded"""
+        """Reset workflow to beginning while keeping steps loaded."""
         self.current_step = 0
         self.variables.clear()
         self.step_outcomes.clear()
 
     def get_current_step(self) -> WorkflowStep | None:
-        """Get the step at the current position"""
+        """Return the step at the current position."""
         if 0 <= self.current_step < self.total_steps:
             return self.steps[self.current_step]
         return None
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert state to dictionary for serialization"""
+        """Convert state to dictionary for serialization."""
         return {
             "file_path": self.file_path,
             "total_steps": self.total_steps,
@@ -151,7 +158,7 @@ _workflow_state = WorkflowState()
 
 
 def get_state() -> WorkflowState:
-    """Get the current workflow state"""
+    """Return the current workflow state."""
     return _workflow_state
 
 
@@ -164,6 +171,7 @@ def require_loaded_workflow() -> WorkflowState:
 
     Raises:
         ActionableError: If no workflow has been loaded
+
     """
     state = get_state()
     if not state.is_loaded:

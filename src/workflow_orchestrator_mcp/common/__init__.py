@@ -1,4 +1,4 @@
-"""Common utilities for workflow-orchestrator-mcp"""
+"""Common utilities for workflow-orchestrator-mcp."""
 
 from __future__ import annotations
 

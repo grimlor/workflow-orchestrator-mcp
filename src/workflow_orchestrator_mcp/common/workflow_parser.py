@@ -1,5 +1,5 @@
 """
-Markdown parser for workflow scripts
+Markdown parser for workflow scripts.
 
 Extracts workflow steps and metadata from markdown files following the format:
     ### 🔧 WORKFLOW STEP: [step name]
@@ -35,6 +35,7 @@ def parse_workflow_markdown(file_path: str) -> list[WorkflowStep]:
 
     Raises:
         ActionableError: If file not found, invalid format, or no steps found
+
     """
     path = Path(file_path)
 

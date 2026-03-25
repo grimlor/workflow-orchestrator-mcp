@@ -1,4 +1,5 @@
-"""BDD specs for workflow loading and parsing.
+"""
+BDD specs for workflow loading and parsing.
 
 Covers: TestLoadWorkflowWithToolSpecifications,
         TestLoadWorkflowWithMultipleTools,
